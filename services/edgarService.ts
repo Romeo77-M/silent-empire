@@ -12,11 +12,19 @@ const padCik = (cik: string): string => cik.padStart(10, '0');
 
 const getCikFromTicker = async (ticker: string): Promise<string> => {
     try {
-        // Use proxy in development, direct in production
         const baseUrl = import.meta.env.DEV ? '/sec-api' : 'https://www.sec.gov';
         const response = await fetch(`${baseUrl}/files/company_tickers.json`);
         
-        if (!response.ok) throw new Error('Failed to fetch SEC ticker data.');
+        if (!response.ok) {
+            throw new Error(`SEC API responded with status ${response.status}`);
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.error("SEC returned non-JSON response:", await response.text());
+            throw new Error('SEC API is temporarily unavailable. Please try again in a moment.');
+        }
+        
         const companies = await response.json();
         
         for (const key in companies) {
@@ -24,7 +32,7 @@ const getCikFromTicker = async (ticker: string): Promise<string> => {
                 return companies[key].cik_str.toString();
             }
         }
-        throw new Error(`CIK not found for ticker: ${ticker}`);
+        throw new Error(`Ticker ${ticker} not found in SEC database. Please verify it's a valid US publicly traded company.`);
     } catch (error) {
         console.error("Error in getCikFromTicker:", error);
         throw error;
@@ -38,9 +46,17 @@ const getLatestFilingInfo = async (cik: string): Promise<{ accessionNo: string; 
     
     try {
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch submissions from SEC Edgar.');
-        const submissions = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch SEC submissions (Status: ${response.status})`);
+        }
 
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new Error('SEC API returned invalid response format.');
+        }
+
+        const submissions = await response.json();
         const recentFilings = submissions.filings.recent;
         
         for (let i = 0; i < recentFilings.form.length; i++) {
@@ -54,7 +70,7 @@ const getLatestFilingInfo = async (cik: string): Promise<{ accessionNo: string; 
             }
         }
         
-        throw new Error('No recent 10-K or 10-Q filing could be found.');
+        throw new Error('No recent 10-K or 10-Q filing found for this company.');
 
     } catch (error) {
         console.error("Error in getLatestFilingInfo:", error);
@@ -68,12 +84,18 @@ const getFilingText = async (cik: string, accessionNo: string, primaryDoc: strin
 
     try {
         const response = await fetch(filingUrl);
-        if (!response.ok) throw new Error(`Failed to fetch filing document from ${filingUrl}`);
+        if (!response.ok) throw new Error(`Failed to fetch filing document (Status: ${response.status})`);
         const html = await response.text();
         
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        return doc.body.textContent || "";
+        const text = doc.body.textContent || "";
+        
+        if (text.length < 100) {
+            throw new Error('Filing document appears to be empty or invalid.');
+        }
+        
+        return text;
 
     } catch (error) {
         console.error("Error in getFilingText:", error);
@@ -86,7 +108,6 @@ export const fetchLatestFilingForTicker = async (ticker: string): Promise<Filing
     const { accessionNo, primaryDoc, form } = await getLatestFilingInfo(cik);
     const text = await getFilingText(cik, accessionNo, primaryDoc);
     
-    const paddedCik = padCik(cik);
     const url = `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNo}/${primaryDoc}`;
 
     return { text, url, formType: form };
