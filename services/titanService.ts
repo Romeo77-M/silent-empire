@@ -13,7 +13,7 @@ interface TitanMultiPerspectiveResponse {
 const MAX_FILING_CHARS = 20000;
 
 export const generateTitanSummary = async ({ ticker, filingText }: { ticker: string; filingText: string; }): Promise<TitanMultiPerspectiveResponse> => {
-  const API_KEY = process.env.VITE_GEMINI_API_KEY;
+  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
   if (!API_KEY) {
     throw new Error("API Configuration Error: Gemini API Key is not set.");
