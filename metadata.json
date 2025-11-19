@@ -1,0 +1,5 @@
+{
+  "name": "Silent Empire: Financial Summarizer",
+  "description": "An AI-powered web app that parses corporate filings and generates structured financial summaries using the Titan GPT Schema, presented with a 'Tactical Calm' UI.",
+  "requestFramePermissions": []
+}
