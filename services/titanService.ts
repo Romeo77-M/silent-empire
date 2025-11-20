@@ -20,7 +20,9 @@ export const generateTitanSummary = async ({ ticker, filingText }: { ticker: str
   }
 
   const genAI = new GoogleGenerativeAI(API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash-latest"
+  });
 
   const truncatedFilingText = filingText.substring(0, MAX_FILING_CHARS);
 
@@ -51,13 +53,17 @@ Adopt the Tactical Calm tone: confident, educational, and neutral. Avoid hype or
 
   try {
     const result = await model.generateContent(systemPrompt + "\n\n" + userContent);
-
-    const jsonString = result.response.text();
+    const response = await result.response;
+    const jsonString = response.text();
+    
     if (!jsonString) {
         throw new Error("Gemini API returned an empty response.");
     }
     
-    const parsedJson = JSON.parse(jsonString);
+    // Remove markdown code fences if present
+    const cleanJson = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsedJson = JSON.parse(cleanJson);
+    
     return parsedJson as TitanMultiPerspectiveResponse;
 
   } catch (error) {
