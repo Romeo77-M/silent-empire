@@ -21,7 +21,7 @@ export const generateTitanSummary = async ({ ticker, filingText }: { ticker: str
 
   const genAI = new GoogleGenerativeAI(API_KEY);
   const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash-latest"
+    model: "gemini-1.5-flash"
   });
 
   const truncatedFilingText = filingText.substring(0, MAX_FILING_CHARS);
