@@ -54,7 +54,6 @@ function isBody(body) {
   return body &&
     typeof body.summary?.headline === 'string' &&
     typeof body.summary?.executive_takeaway === 'string' &&
-    Number.isFinite(body.summary?.overall_score) &&
     isMetric(body.key_metrics?.revenue) &&
     isMetric(body.key_metrics?.net_income) &&
     isMetric(body.key_metrics?.eps) &&
@@ -64,7 +63,6 @@ function isBody(body) {
     Array.isArray(body.insights) &&
     typeof body.what_this_means?.summary_view === 'string' &&
     Number.isFinite(body.what_this_means?.confidence_level) &&
-    body.summary.overall_score >= 0 && body.summary.overall_score <= 10 &&
     body.what_this_means.confidence_level >= 0 && body.what_this_means.confidence_level <= 1;
 }
 
@@ -115,7 +113,7 @@ Required shape:
   "perspectives":{"analyst": BODY,"simple": BODY,"human": BODY}
 }
 Each BODY must contain:
-summary { headline:string, tone:string, overall_score:number 0-10, executive_takeaway:string }
+summary { headline:string, tone:string, executive_takeaway:string }
 key_metrics { revenue:{value:number,unit:string,change_pct:number}, net_income:{value:number,unit:string,change_pct:number}, eps:{value:number,unit:string,change_pct:number} }
 risk_assessment { risk_tier:"low"|"moderate"|"high", primary_risks:string[], mitigating_factors:string[] }
 insights [{type:"positive"|"negative"|"neutral",text:string}]
