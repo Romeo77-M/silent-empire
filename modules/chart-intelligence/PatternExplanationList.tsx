@@ -23,7 +23,7 @@ const PatternExplanationItem: React.FC<PatternExplanationItemProps> = ({ pattern
     const info = useChartDictionary(pattern.pattern);
     if (!info) return null;
 
-    const baseClasses = "p-4 border rounded-lg transition-all duration-300 transform cursor-pointer";
+    const baseClasses = "p-4 border rounded-lg transition-all duration-300 transform cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent-cyan";
     const hoveredClasses = "bg-accent-cyan/10 border-accent-cyan/50 scale-[1.02]";
     const normalClasses = "bg-base-graphite/50 border-gray-800";
 
@@ -32,6 +32,13 @@ const PatternExplanationItem: React.FC<PatternExplanationItemProps> = ({ pattern
             className={`${baseClasses} ${isHovered ? hoveredClasses : normalClasses}`}
             onMouseEnter={() => setHoveredPattern(pattern.pattern)}
             onMouseLeave={() => setHoveredPattern(null)}
+            onFocus={() => setHoveredPattern(pattern.pattern)}
+            onBlur={() => setHoveredPattern(null)}
+            onClick={() => setHoveredPattern(isHovered ? null : pattern.pattern)}
+            onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setHoveredPattern(isHovered ? null : pattern.pattern); } }}
+            role="button"
+            tabIndex={0}
+            aria-pressed={isHovered}
         >
             <div className="flex items-center space-x-3">
                 <InfoIcon className="w-5 h-5 text-accent-cyan shrink-0" />
