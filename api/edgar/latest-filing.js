@@ -1,3 +1,5 @@
+const SEC_TIMEOUT_MS = 15000;
+
 const SEC_HEADERS = {
   'User-Agent': process.env.SEC_USER_AGENT || 'Silent Empire Financial Summarizer contact@silentempire.com',
   'Accept': 'application/json'
@@ -16,7 +18,7 @@ export default async function handler(req, res) {
 
   try {
     const paddedCik = cik.padStart(10, '0');
-    const response = await fetch(`https://data.sec.gov/submissions/CIK${paddedCik}.json`, { headers: SEC_HEADERS });
+    const response = await fetch(`https://data.sec.gov/submissions/CIK${paddedCik}.json`, { headers: SEC_HEADERS, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
     if (!response.ok) {
       console.error('SEC submissions request failed:', response.status);
       return res.status(response.status === 404 ? 404 : 502).json({ error: 'SEC filing service is temporarily unavailable.' });
