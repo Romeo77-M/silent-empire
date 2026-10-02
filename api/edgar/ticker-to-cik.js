@@ -1,9 +1,13 @@
 const SEC_TIMEOUT_MS = 15000;
 
-const SEC_HEADERS = {
-  'User-Agent': process.env.SEC_USER_AGENT || 'Silent Empire Financial Summarizer contact@silentempire.com',
+function getSecHeaders() {
+  const userAgent = process.env.SEC_USER_AGENT;
+  if (!userAgent) return null;
+  return {
+  'User-Agent': userAgent,
   'Accept': 'application/json'
-};
+  };
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -11,13 +15,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 
+  const headers = getSecHeaders();
+  if (!headers) return res.status(500).json({ error: 'SEC service is not configured.' });
+
   const ticker = String(req.query?.ticker || '').trim().toUpperCase();
   if (!/^[A-Z0-9.-]{1,15}$/.test(ticker)) {
     return res.status(400).json({ error: 'Invalid ticker.' });
   }
 
   try {
-    const response = await fetch('https://www.sec.gov/files/company_tickers.json', { headers: SEC_HEADERS, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
+    const response = await fetch('https://www.sec.gov/files/company_tickers.json', { headers, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
     if (!response.ok) {
       console.error('SEC ticker map request failed:', response.status);
       return res.status(502).json({ error: 'SEC ticker service is temporarily unavailable.' });
