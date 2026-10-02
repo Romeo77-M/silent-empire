@@ -28,7 +28,7 @@ export interface TitanSchemaBody {
     mitigating_factors: string[];
   };
   insights: Insight[];
-  recommendation: {
+  what_this_means: {
     summary_view: string;
     confidence_level: number;
   };
