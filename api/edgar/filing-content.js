@@ -1,9 +1,13 @@
 const SEC_TIMEOUT_MS = 15000;
 
-const SEC_HEADERS = {
-  'User-Agent': process.env.SEC_USER_AGENT || 'Silent Empire Financial Summarizer contact@silentempire.com',
+function getSecHeaders() {
+  const userAgent = process.env.SEC_USER_AGENT;
+  if (!userAgent) return null;
+  return {
+  'User-Agent': userAgent,
   'Accept': 'text/html,application/xhtml+xml'
-};
+  };
+}
 
 function decodeEntities(text) {
   return text
@@ -22,6 +26,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 
+  const headers = getSecHeaders();
+  if (!headers) return res.status(500).json({ error: 'SEC service is not configured.' });
+
   const cik = String(req.query?.cik || '').trim();
   const accessionNo = String(req.query?.accessionNo || '').trim();
   const primaryDoc = String(req.query?.primaryDoc || '').trim();
@@ -35,7 +42,7 @@ export default async function handler(req, res) {
 
   try {
     const url = `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNo}/${encodeURIComponent(primaryDoc)}`;
-    const response = await fetch(url, { headers: SEC_HEADERS, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
+    const response = await fetch(url, { headers, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
     if (!response.ok) {
       console.error('SEC filing content request failed:', response.status);
       return res.status(response.status === 404 ? 404 : 502).json({ error: 'SEC filing content is temporarily unavailable.' });
