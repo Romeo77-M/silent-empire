@@ -1,3 +1,5 @@
+const SEC_TIMEOUT_MS = 15000;
+
 const SEC_HEADERS = {
   'User-Agent': process.env.SEC_USER_AGENT || 'Silent Empire Financial Summarizer contact@silentempire.com',
   'Accept': 'application/json'
@@ -15,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch('https://www.sec.gov/files/company_tickers.json', { headers: SEC_HEADERS });
+    const response = await fetch('https://www.sec.gov/files/company_tickers.json', { headers: SEC_HEADERS, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
     if (!response.ok) {
       console.error('SEC ticker map request failed:', response.status);
       return res.status(502).json({ error: 'SEC ticker service is temporarily unavailable.' });
