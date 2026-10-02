@@ -61,7 +61,7 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      if (!/^[A-Z]{1,5}$/.test(ticker)) {
+      if (!/^[A-Z0-9.-]{1,15}$/.test(ticker)) {
         throw new Error('Invalid ticker format.');
       }
       
@@ -100,7 +100,7 @@ const App: React.FC = () => {
       if (errorMessage.includes('API Configuration Error')) {
         setError(`🔧 ${errorMessage}`);
       } else if (errorMessage.includes('Invalid ticker format')) {
-          setError('❌ Invalid ticker format. Use 1-5 capital letters (e.g., AAPL, TSLA).');
+          setError('❌ Invalid ticker format. Enter a valid symbol such as AAPL, TSLA, or BRK.B.');
       } else if (errorMessage.includes('API')) {
           setError('⚠️ Service temporarily unavailable. Please try again in a moment.');
       } else if (errorMessage.includes('filing could be found')) {
