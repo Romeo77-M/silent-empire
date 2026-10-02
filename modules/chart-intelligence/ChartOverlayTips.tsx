@@ -26,8 +26,10 @@ export const ChartOverlayTips: React.FC<ChartOverlayTipsProps> = ({ pattern, x, 
       style={{ left: x, top: y, pointerEvents: visible ? 'auto' : 'none' }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onFocus={onMouseEnter}
+      onBlur={onMouseLeave}
     >
-      <div className="relative group cursor-help inline-flex items-center space-x-1.5 p-2 rounded bg-base-graphite/50">
+      <button type="button" className="relative group cursor-help inline-flex items-center space-x-1.5 p-2 rounded bg-base-graphite/50 focus:outline-none focus:ring-2 focus:ring-accent-cyan" aria-label={`${info.display_label}: ${info.tooltip}`}>
         <InfoIcon className="w-4 h-4 text-accent-cyan" />
         <span className="text-xs text-gray-300">{info.display_label}</span>
          <div className="chart-tooltip-container">
@@ -37,7 +39,7 @@ export const ChartOverlayTips: React.FC<ChartOverlayTipsProps> = ({ pattern, x, 
             </div>
             <div className="chart-tooltip-arrow" />
         </div>
-      </div>
+      </button>
     </div>
   );
 };
