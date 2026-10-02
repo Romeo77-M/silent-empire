@@ -95,6 +95,7 @@ export default async function handler(req, res) {
   }
 
   const filingEvidence = buildFilingEvidence(filingText);
+  if (filingEvidence.length < 500) return res.status(422).json({ error: 'Filing text is too short to analyze reliably.' });
   const genAI = new GoogleGenerativeAI(API_KEY);
   const model = genAI.getGenerativeModel({ model: "Gemini 2.5 Flash-Lite" });
 
@@ -129,7 +130,10 @@ ${filingEvidence}
 """`;
 
   try {
-    const result = await model.generateContent(prompt);
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('AI request timed out')), 55000))
+    ]);
     const raw = (await result.response).text();
     if (!raw) return res.status(502).json({ error: 'AI service returned an empty response.' });
     const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
