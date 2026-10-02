@@ -5,20 +5,20 @@ import { TargetIcon } from './icons/Icons';
 import { FinanceTooltip } from '../modules/finance-dictionary/FinanceTooltip';
 
 interface RecommendationProps {
-    recommendation: TitanSchema['recommendation'];
+    whatThisMeans: TitanSchema['what_this_means'];
 }
 
-export const Recommendation: React.FC<RecommendationProps> = ({ recommendation }) => {
-    const confidencePercentage = (recommendation.confidence_level * 100).toFixed(0);
+export const Recommendation: React.FC<RecommendationProps> = ({ whatThisMeans }) => {
+    const confidencePercentage = (whatThisMeans.confidence_level * 100).toFixed(0);
 
     return (
         <div className="p-6 card rounded-lg bg-gradient-to-br from-accent-cyan/10 to-transparent !border-accent-cyan/20">
             <h3 className="font-serif text-2xl text-white mb-4 flex items-center">
                 <TargetIcon className="w-6 h-6 mr-3 text-accent-cyan" />
-                Recommendation
+                What This Means
             </h3>
             <p className="text-lg text-accent-cyan font-semibold mb-4">
-                "{recommendation.summary_view}"
+                "{whatThisMeans.summary_view}"
             </p>
             <div>
                 <div className="flex justify-between items-center mb-1">
