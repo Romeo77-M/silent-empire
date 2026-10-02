@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   url.searchParams.set('outputsize', 'compact');
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
     if (!response.ok) return res.status(502).json({ error: 'Market data provider request failed.' });
 
     const json = await response.json();
