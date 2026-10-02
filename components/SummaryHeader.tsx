@@ -40,7 +40,7 @@ export const SummaryHeader: React.FC<SummaryHeaderProps> = ({ meta, summary }) =
                         style={{ '--score': score, '--score-color': scoreColorValue } as React.CSSProperties}
                     >
                         <span className="font-serif text-5xl text-white metric-value">{score.toFixed(0)}</span>
-                        <span className="text-xs text-gray-400 tracking-widest mt-1">HEALTH SCORE</span>
+                        <span className="text-xs text-gray-400 tracking-widest mt-1">FINANCIAL SNAPSHOT</span>
                     </div>
                 </div>
             </div>
