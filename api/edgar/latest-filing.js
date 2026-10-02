@@ -1,15 +1,22 @@
 const SEC_TIMEOUT_MS = 15000;
 
-const SEC_HEADERS = {
-  'User-Agent': process.env.SEC_USER_AGENT || 'Silent Empire Financial Summarizer contact@silentempire.com',
+function getSecHeaders() {
+  const userAgent = process.env.SEC_USER_AGENT;
+  if (!userAgent) return null;
+  return {
+  'User-Agent': userAgent,
   'Accept': 'application/json'
-};
+  };
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed.' });
   }
+
+  const headers = getSecHeaders();
+  if (!headers) return res.status(500).json({ error: 'SEC service is not configured.' });
 
   const cik = String(req.query?.cik || '').trim();
   if (!/^\d{1,10}$/.test(cik)) {
@@ -18,7 +25,7 @@ export default async function handler(req, res) {
 
   try {
     const paddedCik = cik.padStart(10, '0');
-    const response = await fetch(`https://data.sec.gov/submissions/CIK${paddedCik}.json`, { headers: SEC_HEADERS, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
+    const response = await fetch(`https://data.sec.gov/submissions/CIK${paddedCik}.json`, { headers, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
     if (!response.ok) {
       console.error('SEC submissions request failed:', response.status);
       return res.status(response.status === 404 ? 404 : 502).json({ error: 'SEC filing service is temporarily unavailable.' });
