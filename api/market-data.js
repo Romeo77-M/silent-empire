@@ -37,7 +37,9 @@ export default async function handler(req, res) {
       high: Number(values['2. high']),
       low: Number(values['3. low']),
       close: Number(values['4. close']),
-    })).filter(row => [row.open,row.high,row.low,row.close].every(Number.isFinite)).reverse();
+    })).filter(row => [row.open,row.high,row.low,row.close].every(Number.isFinite) && row.low <= Math.min(row.open, row.close) && row.high >= Math.max(row.open, row.close) && row.low <= row.high).reverse();
+
+    if (data.length === 0) return res.status(502).json({ error: 'Market data provider returned no valid price rows.' });
 
     res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=1800');
     return res.status(200).json({ ticker, data });
