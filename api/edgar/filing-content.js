@@ -1,3 +1,5 @@
+const SEC_TIMEOUT_MS = 15000;
+
 const SEC_HEADERS = {
   'User-Agent': process.env.SEC_USER_AGENT || 'Silent Empire Financial Summarizer contact@silentempire.com',
   'Accept': 'text/html,application/xhtml+xml'
@@ -33,7 +35,7 @@ export default async function handler(req, res) {
 
   try {
     const url = `https://www.sec.gov/Archives/edgar/data/${cik}/${accessionNo}/${encodeURIComponent(primaryDoc)}`;
-    const response = await fetch(url, { headers: SEC_HEADERS });
+    const response = await fetch(url, { headers: SEC_HEADERS, signal: AbortSignal.timeout(SEC_TIMEOUT_MS) });
     if (!response.ok) {
       console.error('SEC filing content request failed:', response.status);
       return res.status(response.status === 404 ? 404 : 502).json({ error: 'SEC filing content is temporarily unavailable.' });
