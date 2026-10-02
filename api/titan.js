@@ -1,6 +1,80 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const MAX_FILING_CHARS = 20000;
+const MAX_REQUEST_CHARS = 5_000_000;
+const MAX_ANALYSIS_CHARS = 120_000;
+const SECTION_BUDGET = 24_000;
+
+function cleanText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function buildFilingEvidence(text) {
+  const normalized = cleanText(text);
+  if (normalized.length <= MAX_ANALYSIS_CHARS) return normalized;
+
+  const markers = [
+    /item\s+1a[\s.:\-]+risk factors/i,
+    /item\s+2[\s.:\-]+management['’]s discussion and analysis/i,
+    /item\s+7[\s.:\-]+management['’]s discussion and analysis/i,
+    /item\s+8[\s.:\-]+financial statements/i,
+    /consolidated statements? of operations/i,
+    /consolidated statements? of income/i,
+    /consolidated balance sheets?/i,
+    /consolidated statements? of cash flows/i,
+  ];
+
+  const excerpts = [];
+  const seen = new Set();
+  const addExcerpt = (start, length) => {
+    const key = Math.max(0, start);
+    if (seen.has(key)) return;
+    seen.add(key);
+    excerpts.push(normalized.slice(key, key + length));
+  };
+
+  // Preserve filing identity/context from the beginning.
+  addExcerpt(0, 16_000);
+
+  for (const marker of markers) {
+    const match = marker.exec(normalized);
+    if (match) addExcerpt(Math.max(0, match.index - 500), SECTION_BUDGET);
+  }
+
+  // Preserve recent footnotes/exhibits context from the end when budget allows.
+  addExcerpt(Math.max(0, normalized.length - 12_000), 12_000);
+
+  return excerpts.join('\n\n--- FILING EXCERPT ---\n\n').slice(0, MAX_ANALYSIS_CHARS);
+}
+
+function isMetric(metric) {
+  return metric && Number.isFinite(metric.value) && typeof metric.unit === 'string' && Number.isFinite(metric.change_pct);
+}
+
+function isBody(body) {
+  return body &&
+    typeof body.summary?.headline === 'string' &&
+    typeof body.summary?.executive_takeaway === 'string' &&
+    Number.isFinite(body.summary?.overall_score) &&
+    isMetric(body.key_metrics?.revenue) &&
+    isMetric(body.key_metrics?.net_income) &&
+    isMetric(body.key_metrics?.eps) &&
+    ['low','moderate','high'].includes(body.risk_assessment?.risk_tier) &&
+    Array.isArray(body.risk_assessment?.primary_risks) &&
+    Array.isArray(body.risk_assessment?.mitigating_factors) &&
+    Array.isArray(body.insights) &&
+    typeof body.recommendation?.summary_view === 'string' &&
+    Number.isFinite(body.recommendation?.confidence_level);
+}
+
+function isTitanResponse(value) {
+  return value &&
+    typeof value.meta?.company_name === 'string' &&
+    typeof value.meta?.ticker === 'string' &&
+    typeof value.meta?.report_type === 'string' &&
+    isBody(value.perspectives?.analyst) &&
+    isBody(value.perspectives?.simple) &&
+    isBody(value.perspectives?.human);
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,7 +87,6 @@ export default async function handler(req, res) {
 
   const ticker = String(req.body?.ticker || '').trim().toUpperCase();
   const filingText = String(req.body?.filingText || '');
-  const MAX_REQUEST_CHARS = 5_000_000;
   if (!/^[A-Z0-9.-]{1,15}$/.test(ticker) || !filingText.trim()) {
     return res.status(400).json({ error: 'A valid ticker and filing text are required.' });
   }
@@ -21,35 +94,38 @@ export default async function handler(req, res) {
     return res.status(413).json({ error: 'Filing is too large to process safely.' });
   }
 
+  const filingEvidence = buildFilingEvidence(filingText);
   const genAI = new GoogleGenerativeAI(API_KEY);
   const model = genAI.getGenerativeModel({ model: "Gemini 2.5 Flash-Lite" });
-  const filingExcerpt = filingText.substring(0, MAX_FILING_CHARS);
 
-  const prompt = `You are Titan, an educational financial-report analyst. Analyze only the supplied filing text. Do not give personalized investment advice or buy/sell/hold instructions. Return one valid JSON object and nothing else.
+  const prompt = `You are Titan, an educational financial-report analyst. Analyze only the supplied filing excerpts. Do not give personalized investment advice or buy/sell/hold instructions. Return one valid JSON object and nothing else.
+
+Important evidence rules:
+- The excerpts come from one SEC filing and may omit sections.
+- Never claim you reviewed the entire filing.
+- Do not invent missing figures, causes, periods, or risks.
+- If a requested metric is not supported by the excerpts, use value 0, change_pct 0, unit "not_available", and explain the limitation in the narrative.
+- Distinguish reported facts from interpretation.
 
 Required shape:
 {
   "meta":{"company_name":"","ticker":"","report_type":"","fiscal_period":"","currency":"","filing_date":""},
-  "perspectives":{
-    "analyst": BODY,
-    "simple": BODY,
-    "human": BODY
-  }
+  "perspectives":{"analyst": BODY,"simple": BODY,"human": BODY}
 }
 Each BODY must contain:
 summary { headline:string, tone:string, overall_score:number 0-10, executive_takeaway:string }
-key_metrics { revenue:{value:number,unit:string,change_pct:number}, net_income:{...}, eps:{...} }
+key_metrics { revenue:{value:number,unit:string,change_pct:number}, net_income:{value:number,unit:string,change_pct:number}, eps:{value:number,unit:string,change_pct:number} }
 risk_assessment { risk_tier:"low"|"moderate"|"high", primary_risks:string[], mitigating_factors:string[] }
 insights [{type:"positive"|"negative"|"neutral",text:string}]
 recommendation { summary_view:string, confidence_level:number 0-1 }
 
-"recommendation.summary_view" is an educational interpretation of the filing, never an investment recommendation. If the filing excerpt does not support a fact, say that it is not available rather than inventing it.
+"recommendation.summary_view" is an educational interpretation, never an investment recommendation.
 Analyst is concise/professional. Simple uses plain English and explains numbers. Human is conversational and beginner-friendly without being condescending. Use a calm, neutral tone.
 
 Ticker: ${ticker}
-Filing text:
+Selected filing evidence:
 """
-${filingExcerpt}
+${filingEvidence}
 """`;
 
   try {
@@ -57,7 +133,12 @@ ${filingExcerpt}
     const raw = (await result.response).text();
     if (!raw) return res.status(502).json({ error: 'AI service returned an empty response.' });
     const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    return res.status(200).json(JSON.parse(clean));
+    const parsed = JSON.parse(clean);
+    if (!isTitanResponse(parsed)) {
+      console.error('Titan response failed schema validation.');
+      return res.status(502).json({ error: 'AI service returned an invalid analysis format.' });
+    }
+    return res.status(200).json(parsed);
   } catch (error) {
     console.error('Titan generation failed:', error);
     return res.status(502).json({ error: 'Failed to generate financial summary.' });
