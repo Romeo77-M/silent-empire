@@ -40,10 +40,6 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ summaries }) => 
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Financial Snapshot</td>
-                        {summaries.map(s => <td key={s.id} className="text-center text-2xl font-bold">{(s.perspectives.analyst.summary.overall_score * 10).toFixed(0)}</td>)}
-                    </tr>
-                    <tr>
                         <td>Revenue</td>
                         {summaries.map(s => <td key={s.id}>{renderMetric(s.perspectives.analyst.key_metrics.revenue)}</td>)}
                     </tr>
