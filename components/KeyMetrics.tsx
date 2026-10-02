@@ -10,10 +10,21 @@ interface KeyMetricsProps {
 }
 
 const MetricCircle: React.FC<{ title: string; metric: Metric; currency: string; }> = ({ title, metric, currency }) => {
+    const unavailable = metric.unit === 'not_available';
     const isPositive = metric.change_pct >= 0;
     const colorClass = isPositive ? 'text-positive-emerald' : 'text-risk-red';
     const bgColorClass = isPositive ? 'bg-positive-emerald/10' : 'bg-risk-red/10';
     const Icon = isPositive ? ArrowUpRightIcon : ArrowDownRightIcon;
+
+    if (unavailable) {
+        return (
+            <div className="metric-circle">
+                <p className="text-sm text-gray-400 uppercase tracking-wider"><FinanceTooltip term={title} /></p>
+                <p className="text-2xl font-serif text-gray-300 my-2 metric-value">Not available</p>
+                <p className="text-xs text-gray-500">Not supported by the selected filing evidence.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="metric-circle">
