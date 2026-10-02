@@ -34,8 +34,10 @@ const App: React.FC = () => {
     if (sharedSummaryData) {
       try {
         const decodedData = atob(decodeURIComponent(sharedSummaryData));
-        const summary: EnhancedTitanSchema = JSON.parse(decodedData);
-        
+        const parsed = JSON.parse(decodedData);
+        const summary = historyService.normalizeSummary(parsed);
+        if (!summary) throw new Error('Invalid shared summary format.');
+
         summary.id = `${summary.meta.ticker}-${new Date().getTime()}`;
 
         setSummaries(prev => {
@@ -66,8 +68,9 @@ const App: React.FC = () => {
       }
       
       const cachedSummary = cache.get<EnhancedTitanSchema>(ticker);
-      if (cachedSummary) {
-          setSummaries(prev => [cachedSummary, ...prev.filter(s => s.meta.ticker !== ticker)]);
+      const normalizedCachedSummary = cachedSummary ? historyService.normalizeSummary(cachedSummary) : null;
+      if (normalizedCachedSummary) {
+          setSummaries(prev => [normalizedCachedSummary, ...prev.filter(s => s.meta.ticker !== ticker)]);
           setView('list');
           trackEvent('analyze_ticker', { ticker: ticker, source: 'cache' });
           return;
