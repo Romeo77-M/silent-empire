@@ -123,7 +123,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ data, isSelected, onTo
                                 <RiskAssessment assessment={perspectiveData.risk_assessment} />
                             </div>
                         </div>
-                        <Recommendation recommendation={perspectiveData.recommendation} />
+                        <Recommendation whatThisMeans={perspectiveData.what_this_means} />
                     </div>
                 </div>
             </div>
