@@ -14,7 +14,6 @@ export interface TitanSchemaBody {
   summary: {
     headline: string;
     tone: string;
-    overall_score: number;
     executive_takeaway: string;
   };
   key_metrics: {
