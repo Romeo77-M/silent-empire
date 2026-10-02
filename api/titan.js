@@ -13,8 +13,12 @@ export default async function handler(req, res) {
 
   const ticker = String(req.body?.ticker || '').trim().toUpperCase();
   const filingText = String(req.body?.filingText || '');
-  if (!/^[A-Z]{1,10}$/.test(ticker) || !filingText.trim()) {
+  const MAX_REQUEST_CHARS = 5_000_000;
+  if (!/^[A-Z0-9.-]{1,15}$/.test(ticker) || !filingText.trim()) {
     return res.status(400).json({ error: 'A valid ticker and filing text are required.' });
+  }
+  if (filingText.length > MAX_REQUEST_CHARS) {
+    return res.status(413).json({ error: 'Filing is too large to process safely.' });
   }
 
   const genAI = new GoogleGenerativeAI(API_KEY);
