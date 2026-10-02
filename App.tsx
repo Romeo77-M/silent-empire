@@ -209,7 +209,7 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
       <footer className="text-center p-4 text-xs text-gray-500">
-        Engineered by RDV web solutions, Empire Systems Division. © 2025 Silent Empire Command.
+        Engineered by RDV web solutions, Empire Systems Division. © {new Date().getFullYear()} Silent Empire Command.
       </footer>
     </div>
   );
