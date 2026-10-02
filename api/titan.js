@@ -62,8 +62,10 @@ function isBody(body) {
     Array.isArray(body.risk_assessment?.primary_risks) &&
     Array.isArray(body.risk_assessment?.mitigating_factors) &&
     Array.isArray(body.insights) &&
-    typeof body.recommendation?.summary_view === 'string' &&
-    Number.isFinite(body.recommendation?.confidence_level);
+    typeof body.what_this_means?.summary_view === 'string' &&
+    Number.isFinite(body.what_this_means?.confidence_level) &&
+    body.summary.overall_score >= 0 && body.summary.overall_score <= 10 &&
+    body.what_this_means.confidence_level >= 0 && body.what_this_means.confidence_level <= 1;
 }
 
 function isTitanResponse(value) {
@@ -117,9 +119,9 @@ summary { headline:string, tone:string, overall_score:number 0-10, executive_tak
 key_metrics { revenue:{value:number,unit:string,change_pct:number}, net_income:{value:number,unit:string,change_pct:number}, eps:{value:number,unit:string,change_pct:number} }
 risk_assessment { risk_tier:"low"|"moderate"|"high", primary_risks:string[], mitigating_factors:string[] }
 insights [{type:"positive"|"negative"|"neutral",text:string}]
-recommendation { summary_view:string, confidence_level:number 0-1 }
+what_this_means { summary_view:string, confidence_level:number 0-1 }
 
-"recommendation.summary_view" is an educational interpretation, never an investment recommendation.
+"what_this_means.summary_view" explains the filing evidence and its significance for a learner. It must never contain an investment recommendation, rating, target price, or buy/sell/hold instruction.
 Analyst is concise/professional. Simple uses plain English and explains numbers. Human is conversational and beginner-friendly without being condescending. Use a calm, neutral tone.
 
 Ticker: ${ticker}
