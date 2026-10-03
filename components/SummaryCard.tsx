@@ -78,7 +78,10 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ data, isSelected, onTo
     const handleShare = async () => {
         try {
             const jsonString = JSON.stringify(data);
-            const bytes = new TextEncoder().encode(jsonString);\n            let binary = '';\n            bytes.forEach(byte => { binary += String.fromCharCode(byte); });\n            const encodedData = encodeURIComponent(btoa(binary));
+            const bytes = new TextEncoder().encode(jsonString);
+            let binary = '';
+            bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+            const encodedData = encodeURIComponent(btoa(binary));
             const url = `${window.location.origin}${window.location.pathname}?summary=${encodedData}`;
 
             const shareMethod = navigator.share ? 'native' : 'clipboard';
