@@ -41,6 +41,8 @@ export interface TitanMeta {
     filing_date: string;
     file_name?: string;
     filingUrl?: string;
+    accessionNumber?: string;
+    reportDate?: string;
 }
 
 // The new primary data structure for a summary.
