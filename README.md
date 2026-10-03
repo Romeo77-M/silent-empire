@@ -92,3 +92,12 @@ Before a public or paid launch:
 - add privacy-conscious usage/cost telemetry before broad access.
 
 The current in-memory Titan limiter is intentionally a lightweight MVP abuse guard. Serverless instances do not share its state, so it must not be treated as production-grade global rate limiting.
+
+
+## Pause-point handoff
+
+Safe pause point: MVP hardening remains isolated on `codex/silent-empire-mvp-hardening` in draft PR #1. Do not merge to `main` without explicit owner approval.
+
+Resume in this order: confirm CI and deployment are green; validate representative 10-K and 10-Q summaries against source filings; design durable shared Titan caching keyed by SEC accession; replace the in-memory limiter before broad public access; complete mobile/accessibility/error-state QA; then begin `What Changed` using latest versus prior comparable filings.
+
+Secrets, paid-provider decisions, commercial data licensing, and any merge to `main` remain human approval boundaries.
