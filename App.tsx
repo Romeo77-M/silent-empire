@@ -24,6 +24,10 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>(() => (historyService.loadSummaries().length > 0 ? 'list' : 'landing'));
   const [chartTicker, setChartTicker] = useState<string>(() => historyService.loadSummaries()[0]?.meta.ticker || 'AAPL');
 
+  const recentChartTickers = Array.from(new Set(summaries.map(summary => summary.meta.ticker)))
+    .filter(ticker => ticker !== chartTicker)
+    .slice(0, 2);
+
   useEffect(() => {
     historyService.saveSummaries(summaries);
   }, [summaries]);
@@ -196,7 +200,7 @@ const App: React.FC = () => {
         const selectedSummaries = summaries.filter(s => selectedSummaryIds.has(s.id));
         return <ComparisonView summaries={selectedSummaries} />;
       case 'chart':
-        return <ChartIntelligencePage initialTicker={chartTicker} />;
+        return <ChartIntelligencePage initialTicker={chartTicker} recentTickers={recentChartTickers} onTickerChange={setChartTicker} />;
       default:
         return <LandingPage onAnalyze={handleAnalysis} isLoading={isLoading} />;
     }
