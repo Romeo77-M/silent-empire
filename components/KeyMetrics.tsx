@@ -36,7 +36,7 @@ const MetricCircle: React.FC<{ title: string; metric: Metric; currency: string }
     );
   }
 
-  const isPerShare = metric.unit === 'USD';
+  const isPerShare = title === 'EPS';
   const value = isPerShare
     ? `${currencySymbol(currency)}${metric.value.toFixed(2)}`
     : metric.value.toLocaleString();
