@@ -196,7 +196,7 @@ const App: React.FC = () => {
         const selectedSummaries = summaries.filter(s => selectedSummaryIds.has(s.id));
         return <ComparisonView summaries={selectedSummaries} />;
       case 'chart':
-        return <ChartIntelligencePage />;
+        return <ChartIntelligencePage initialTicker={chartTicker} />;
       default:
         return <LandingPage onAnalyze={handleAnalysis} isLoading={isLoading} />;
     }
