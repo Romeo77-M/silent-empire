@@ -78,7 +78,10 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ data, isSelected, onTo
     const handleShare = async () => {
         try {
             const jsonString = JSON.stringify(data);
-            const encodedData = encodeURIComponent(btoa(jsonString));
+            const bytes = new TextEncoder().encode(jsonString);
+            let binary = '';
+            bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+            const encodedData = encodeURIComponent(btoa(binary));
             const url = `${window.location.origin}${window.location.pathname}?summary=${encodedData}`;
 
             const shareMethod = navigator.share ? 'native' : 'clipboard';
@@ -123,7 +126,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ data, isSelected, onTo
                                 <RiskAssessment assessment={perspectiveData.risk_assessment} />
                             </div>
                         </div>
-                        <Recommendation recommendation={perspectiveData.recommendation} />
+                        <Recommendation whatThisMeans={perspectiveData.what_this_means} />
                     </div>
                 </div>
             </div>

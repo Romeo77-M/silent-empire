@@ -14,7 +14,6 @@ export interface TitanSchemaBody {
   summary: {
     headline: string;
     tone: string;
-    overall_score: number;
     executive_takeaway: string;
   };
   key_metrics: {
@@ -28,9 +27,8 @@ export interface TitanSchemaBody {
     mitigating_factors: string[];
   };
   insights: Insight[];
-  recommendation: {
+  what_this_means: {
     summary_view: string;
-    confidence_level: number;
   };
 }
 
@@ -43,6 +41,8 @@ export interface TitanMeta {
     filing_date: string;
     file_name?: string;
     filingUrl?: string;
+    accessionNumber?: string;
+    reportDate?: string;
 }
 
 // The new primary data structure for a summary.

@@ -6,6 +6,9 @@ interface ComparisonViewProps {
 }
 
 const renderMetric = (metric: TitanSchema['key_metrics']['revenue']) => {
+    if (metric.unit === 'not_available') {
+        return <div className="text-center text-gray-400">Not available</div>;
+    }
     const isPositive = metric.change_pct >= 0;
     const colorClass = isPositive ? 'text-positive-emerald' : 'text-risk-red';
     return (
@@ -36,10 +39,6 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ summaries }) => 
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Health Score</td>
-                        {summaries.map(s => <td key={s.id} className="text-center text-2xl font-bold">{(s.perspectives.analyst.summary.overall_score * 10).toFixed(0)}</td>)}
-                    </tr>
                     <tr>
                         <td>Revenue</td>
                         {summaries.map(s => <td key={s.id}>{renderMetric(s.perspectives.analyst.key_metrics.revenue)}</td>)}

@@ -22,6 +22,11 @@ const App: React.FC = () => {
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>(() => (historyService.loadSummaries().length > 0 ? 'list' : 'landing'));
+  const [chartTicker, setChartTicker] = useState<string>(() => historyService.loadSummaries()[0]?.meta.ticker || 'AAPL');
+
+  const recentChartTickers = Array.from(new Set(summaries.map(summary => summary.meta.ticker)))
+    .filter(ticker => ticker !== chartTicker)
+    .slice(0, 2);
 
   useEffect(() => {
     historyService.saveSummaries(summaries);
@@ -33,9 +38,13 @@ const App: React.FC = () => {
 
     if (sharedSummaryData) {
       try {
-        const decodedData = atob(decodeURIComponent(sharedSummaryData));
-        const summary: EnhancedTitanSchema = JSON.parse(decodedData);
-        
+        const binary = atob(decodeURIComponent(sharedSummaryData));
+        const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+        const decodedData = new TextDecoder().decode(bytes);
+        const parsed = JSON.parse(decodedData);
+        const summary = historyService.normalizeSummary(parsed);
+        if (!summary) throw new Error('Invalid shared summary format.');
+
         summary.id = `${summary.meta.ticker}-${new Date().getTime()}`;
 
         setSummaries(prev => {
@@ -44,6 +53,7 @@ const App: React.FC = () => {
           // Add the new shared summary to the top of the list.
           return [summary, ...otherSummaries];
         });
+        setChartTicker(summary.meta.ticker);
         setView('list');
         
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -61,34 +71,41 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      if (!/^[A-Z]{1,5}$/.test(ticker)) {
+      if (!/^[A-Z0-9.-]{1,15}$/.test(ticker)) {
         throw new Error('Invalid ticker format.');
       }
       
-      const cachedSummary = cache.get<EnhancedTitanSchema>(ticker);
-      if (cachedSummary) {
-          setSummaries(prev => [cachedSummary, ...prev.filter(s => s.meta.ticker !== ticker)]);
+      // Fetch SEC metadata first so cached AI output is tied to the exact filing, not just the ticker.
+      const filing = await fetchLatestFilingForTicker(ticker);
+      const cacheKey = `summary:${ticker}:${filing.accessionNumber}`;
+      const cachedSummary = cache.get<EnhancedTitanSchema>(cacheKey);
+      const normalizedCachedSummary = cachedSummary ? historyService.normalizeSummary(cachedSummary) : null;
+      if (normalizedCachedSummary) {
+          setSummaries(prev => [normalizedCachedSummary, ...prev.filter(s => s.meta.ticker !== ticker)]);
+          setChartTicker(normalizedCachedSummary.meta.ticker);
           setView('list');
-          trackEvent('analyze_ticker', { ticker: ticker, source: 'cache' });
+          trackEvent('analyze_ticker', { ticker: ticker, source: 'filing_cache' });
           return;
       }
-        
-      const filing = await fetchLatestFilingForTicker(ticker);
-      
-      const result = await generateTitanSummary({ ticker, filingText: filing.text });
+
+      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate } });
 
       const newSummary: EnhancedTitanSchema = {
         id: `${result.meta.ticker}-${new Date().getTime()}`,
         meta: {
             ...result.meta,
             file_name: `Source: ${filing.formType} Filing`,
-            filingUrl: filing.url
+            filingUrl: filing.url,
+            filing_date: filing.filingDate || result.meta.filing_date,
+            accessionNumber: filing.accessionNumber,
+            reportDate: filing.reportDate
         },
         perspectives: result.perspectives
       };
 
-      cache.set(ticker, newSummary, 1440); // Cache for 24 hours
+      cache.set(cacheKey, newSummary, 10080); // Reuse this exact filing analysis for 7 days
       setSummaries(prev => [newSummary, ...prev.filter(s => s.meta.ticker !== newSummary.meta.ticker)]);
+      setChartTicker(newSummary.meta.ticker);
       setView('list');
       trackEvent('analyze_ticker', { ticker: ticker, source: 'api' });
 
@@ -100,7 +117,7 @@ const App: React.FC = () => {
       if (errorMessage.includes('API Configuration Error')) {
         setError(`🔧 ${errorMessage}`);
       } else if (errorMessage.includes('Invalid ticker format')) {
-          setError('❌ Invalid ticker format. Use 1-5 capital letters (e.g., AAPL, TSLA).');
+          setError('❌ Invalid ticker format. Enter a valid symbol such as AAPL, TSLA, or BRK.B.');
       } else if (errorMessage.includes('API')) {
           setError('⚠️ Service temporarily unavailable. Please try again in a moment.');
       } else if (errorMessage.includes('filing could be found')) {
@@ -187,7 +204,7 @@ const App: React.FC = () => {
         const selectedSummaries = summaries.filter(s => selectedSummaryIds.has(s.id));
         return <ComparisonView summaries={selectedSummaries} />;
       case 'chart':
-        return <ChartIntelligencePage />;
+        return <ChartIntelligencePage initialTicker={chartTicker} recentTickers={recentChartTickers} onTickerChange={setChartTicker} />;
       default:
         return <LandingPage onAnalyze={handleAnalysis} isLoading={isLoading} />;
     }
@@ -206,7 +223,7 @@ const App: React.FC = () => {
         {renderContent()}
       </main>
       <footer className="text-center p-4 text-xs text-gray-500">
-        Engineered by RDV web solutions, Empire Systems Division. © 2025 Silent Empire Command.
+        Engineered by RDV web solutions, Empire Systems Division. © {new Date().getFullYear()} Silent Empire Command.
       </footer>
     </div>
   );
