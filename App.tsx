@@ -87,7 +87,7 @@ const App: React.FC = () => {
         
       const filing = await fetchLatestFilingForTicker(ticker);
       
-      const result = await generateTitanSummary({ ticker, filingText: filing.text });
+      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber });
 
       const newSummary: EnhancedTitanSchema = {
         id: `${result.meta.ticker}-${new Date().getTime()}`,
