@@ -16,6 +16,7 @@ export const SummaryHeader: React.FC<SummaryHeaderProps> = ({ meta, summary }) =
                     <h2 className="font-serif text-5xl text-accent-cyan my-2">{meta.company_name} ({meta.ticker})</h2>
                     <p className="text-xs text-gray-500 mt-1">
                         {meta.file_name || 'Ticker-based Analysis'} &bull; Filed: {meta.filing_date}
+                        {meta.reportDate && <> &bull; Period ended: {meta.reportDate}</>}
                         {meta.filingUrl && (
                              <>
                                 {' '}&bull;{' '}
