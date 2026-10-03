@@ -19,6 +19,9 @@ interface FilingInfo {
     text: string;
     url: string;
     formType: string;
+    filingDate: string;
+    reportDate: string;
+    accessionNumber: string;
 }
 
 export const fetchLatestFilingForTicker = async (ticker: string): Promise<FilingInfo> => {
@@ -31,7 +34,7 @@ export const fetchLatestFilingForTicker = async (ticker: string): Promise<Filing
         // Step 2: Get latest filing info
         const { response: filingResponse, payload: filingPayload } = await fetchJson(`/api/edgar/latest-filing?cik=${encodeURIComponent(cik)}`);
         if (!filingResponse.ok) throw new Error(filingPayload?.error || 'Failed to find filing');
-        const { accessionNo, primaryDoc, form } = filingPayload;
+        const { accessionNo, primaryDoc, form, filingDate, reportDate, accessionNumber } = filingPayload;
 
         // Step 3: Get filing content
         const { response: contentResponse, payload: contentPayload } = await fetchJson(
@@ -42,7 +45,7 @@ export const fetchLatestFilingForTicker = async (ticker: string): Promise<Filing
         if (!contentResponse.ok) throw new Error(contentPayload?.error || 'Failed to fetch filing content');
         const { text, url } = contentPayload;
 
-        return { text, url, formType: form };
+        return { text, url, formType: form, filingDate, reportDate, accessionNumber };
 
     } catch (error) {
         console.error('Error in fetchLatestFilingForTicker:', error);
