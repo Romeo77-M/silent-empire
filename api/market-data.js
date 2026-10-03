@@ -1,3 +1,5 @@
+import { normalizeDailyBars, validateProviderIdentity } from '../lib/marketDataIntegrity.js';
+
 const MAX_OUTPUT_SIZE = 120;
 
 export default async function handler(req, res) {
@@ -18,6 +20,7 @@ export default async function handler(req, res) {
   url.searchParams.set('symbol', ticker);
   url.searchParams.set('interval', '1day');
   url.searchParams.set('outputsize', String(MAX_OUTPUT_SIZE));
+  url.searchParams.set('adjust', 'splits');
   url.searchParams.set('apikey', apiKey);
   url.searchParams.set('format', 'JSON');
 
@@ -50,20 +53,13 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: 'Market data provider returned an unexpected response.' });
     }
 
-    const data = json.values.map(row => ({
-      date: String(row.datetime || '').slice(0, 10),
-      open: Number(row.open),
-      high: Number(row.high),
-      low: Number(row.low),
-      close: Number(row.close),
-    })).filter(row =>
-      /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
-      [row.open, row.high, row.low, row.close].every(Number.isFinite) &&
-      row.open > 0 && row.high > 0 && row.low > 0 && row.close > 0 &&
-      row.low <= Math.min(row.open, row.close) &&
-      row.high >= Math.max(row.open, row.close) &&
-      row.low <= row.high
-    ).sort((a, b) => a.date.localeCompare(b.date));
+    if (!validateProviderIdentity(json.meta, ticker)) {
+      console.error('Market data provider symbol mismatch:', json.meta?.symbol, ticker);
+      return res.status(502).json({ error: 'Market data provider returned data for a different symbol.' });
+    }
+
+    const { data, rejectedRows, duplicateDates } = normalizeDailyBars(json.values);
+
 
     if (data.length === 0) {
       return res.status(502).json({ error: 'Market data provider returned no valid price rows.' });
@@ -74,6 +70,15 @@ export default async function handler(req, res) {
       ticker,
       provider: 'twelve-data',
       interval: '1day',
+      adjustment: 'splits',
+      currency: json.meta?.currency || null,
+      exchange: json.meta?.exchange || null,
+      integrity: {
+        rowsReceived: json.values.length,
+        rowsAccepted: data.length,
+        rejectedRows,
+        duplicateDates,
+      },
       data
     });
   } catch (error) {
