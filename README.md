@@ -78,3 +78,17 @@ Build for usefulness first while preserving a path to modest sustainable revenue
 - do not rely on a market-data plan for commercial use unless its display and redistribution rights explicitly support the product.
 
 A small private beta should precede monetization. The primary validation question is whether non-expert users understand a company materially faster and more confidently after using Silent Empire.
+
+
+## Beta readiness checklist
+
+Before a public or paid launch:
+- replace the in-memory Titan rate limiter with a durable/shared limiter appropriate to the deployment platform;
+- add server-side reusable Titan caching keyed by exact SEC filing identity;
+- verify automated tests run in CI, not only that Vercel builds successfully;
+- validate source provenance and material figures against representative 10-K and 10-Q filings;
+- test keyboard, mobile, reduced-motion, loading, error, and no-data states;
+- confirm market-data commercial display/redistribution rights for the intended launch;
+- add privacy-conscious usage/cost telemetry before broad access.
+
+The current in-memory Titan limiter is intentionally a lightweight MVP abuse guard. Serverless instances do not share its state, so it must not be treated as production-grade global rate limiting.
