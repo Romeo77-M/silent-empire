@@ -42,8 +42,16 @@ export default async function handler(req, res) {
 
     const accession = String(recent.accessionNumber?.[index] || '');
     const primaryDoc = String(recent.primaryDocument?.[index] || '');
-    if (!/^\d{10}-\d{2}-\d{6}$/.test(accession) || !primaryDoc) {
-      return res.status(502).json({ error: 'SEC filing metadata is incomplete.' });
+    const filingDate = String(recent.filingDate?.[index] || '');
+    const reportDate = String(recent.reportDate?.[index] || '');
+    const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value);
+    if (
+      !/^\d{10}-\d{2}-\d{6}$/.test(accession) ||
+      !primaryDoc ||
+      !validDate(filingDate) ||
+      (reportDate && !validDate(reportDate))
+    ) {
+      return res.status(502).json({ error: 'SEC filing metadata is incomplete or invalid.' });
     }
 
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
@@ -51,8 +59,8 @@ export default async function handler(req, res) {
       accessionNo: accession.replace(/-/g, ''),
       primaryDoc,
       form: recent.form[index],
-      filingDate: String(recent.filingDate?.[index] || ''),
-      reportDate: String(recent.reportDate?.[index] || ''),
+      filingDate,
+      reportDate,
       accessionNumber: accession
     });
   } catch (error) {
