@@ -33,6 +33,7 @@ export const ChartIntelligencePage: React.FC = () => {
   const [hoveredPattern, setHoveredPattern] = useState<string | null>(null);
   const [activeMarkerIndex, setActiveMarkerIndex] = useState<number | null>(null);
   const [visiblePatternTypes, setVisiblePatternTypes] = useState<Set<string>>(new Set());
+  const [showPatternMarkers, setShowPatternMarkers] = useState(false);
   
   const [chartData, setChartData] = useState<CandlestickData[]>([]);
   const [isChartLoading, setIsChartLoading] = useState<boolean>(true);
@@ -221,9 +222,17 @@ export const ChartIntelligencePage: React.FC = () => {
             </div>
         </div>
       {!isChartLoading && !chartError && patternTypes.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Pattern filters">
-          <span className="mr-1 text-xs uppercase tracking-wider text-gray-500">Show patterns</span>
-          {patternTypes.map(pattern => (
+        <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Pattern controls">
+          <button
+            type="button"
+            aria-pressed={showPatternMarkers}
+            onClick={() => { setShowPatternMarkers(value => !value); setActiveMarkerIndex(null); }}
+            className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors ${showPatternMarkers ? 'border-accent-cyan/60 bg-accent-cyan/15 text-accent-cyan' : 'border-gray-700 bg-gray-900/60 text-gray-300 hover:border-accent-cyan/40'}`}
+          >
+            {showPatternMarkers ? 'Hide candle info' : 'Show candle info'}
+          </button>
+          {showPatternMarkers && <span className="ml-2 mr-1 text-xs uppercase tracking-wider text-gray-500">Filter</span>}
+          {showPatternMarkers && patternTypes.map(pattern => (
             <button
               key={pattern}
               type="button"
@@ -242,7 +251,7 @@ export const ChartIntelligencePage: React.FC = () => {
         
         <svg ref={svgRef} width={dimensions.width} height={dimensions.height}></svg>
         
-        {!isChartLoading && !chartError && visiblePatterns.map((p) => {
+        {!isChartLoading && !chartError && showPatternMarkers && visiblePatterns.map((p) => {
           const markerIndex = patterns.indexOf(p);
           return (
             <ChartOverlayTips
