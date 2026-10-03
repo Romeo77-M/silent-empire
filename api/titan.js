@@ -99,8 +99,20 @@ export default async function handler(req, res) {
   const ticker = String(req.body?.ticker || '').trim().toUpperCase();
   const filingText = String(req.body?.filingText || '');
   const filingIdentity = String(req.body?.filingIdentity || '').trim();
-  if (!/^[A-Z0-9.-]{1,15}$/.test(ticker) || !filingText.trim() || !/^\d{10}-\d{2}-\d{6}$/.test(filingIdentity)) {
-    return res.status(400).json({ error: 'A valid ticker, filing identity, and filing text are required.' });
+  const filingMetadata = req.body?.filingMetadata || {};
+  const formType = String(filingMetadata.formType || '').trim().toUpperCase();
+  const filingDate = String(filingMetadata.filingDate || '').trim();
+  const reportDate = String(filingMetadata.reportDate || '').trim();
+  const validDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (
+    !/^[A-Z0-9.-]{1,15}$/.test(ticker) ||
+    !filingText.trim() ||
+    !/^\d{10}-\d{2}-\d{6}$/.test(filingIdentity) ||
+    !['10-K', '10-Q'].includes(formType) ||
+    !validDate(filingDate) ||
+    (reportDate && !validDate(reportDate))
+  ) {
+    return res.status(400).json({ error: 'Valid ticker, SEC filing metadata, filing identity, and filing text are required.' });
   }
   if (filingText.length > MAX_REQUEST_CHARS) {
     return res.status(413).json({ error: 'Filing is too large to process safely.' });
@@ -121,7 +133,9 @@ Important evidence rules:
 - If a requested metric is not supported by the excerpts, use value 0, change_pct 0, unit "not_available", and explain the limitation in the narrative.
 - Distinguish reported facts from interpretation.\n- Never state or imply a cause (for example, "due to", "because of", "driven by", or "benefited from") unless that causal relationship is explicitly stated in the supplied evidence.\n- Do not convert correlation, timing, or general business context into causation.\n- When evidence supports a change but not its cause, state only the change.\n- Keep material figures tied to the period and units supported by the evidence.
 - The response meta ticker must exactly match the requested ticker.
-- Do not guess filing_date, fiscal_period, currency, or report_type. Use only values supported by the filing evidence.
+- SEC filing identity is trusted metadata supplied separately from the filing excerpts.
+- Use the trusted SEC form type and filing date below for report_type and filing_date. Do not override or reinterpret them.
+- Do not guess fiscal_period or currency. Use only values supported by the filing evidence.
 
 Required shape:
 {
@@ -139,6 +153,10 @@ what_this_means { summary_view:string }
 Analyst is concise/professional. Simple uses plain English and explains numbers. Human is conversational and beginner-friendly without being condescending. Use a calm, neutral tone.
 
 Ticker: ${ticker}
+Trusted SEC form type: ${formType}
+Trusted SEC filing date: ${filingDate}
+Trusted SEC report period end: ${reportDate || 'not_available'}
+Trusted SEC accession: ${filingIdentity}
 Selected filing evidence:
 """
 ${filingEvidence}
@@ -153,6 +171,13 @@ ${filingEvidence}
     if (!raw) return res.status(502).json({ error: 'AI service returned an empty response.' });
     const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const parsed = JSON.parse(clean);
+    // SEC metadata is authoritative; never rely on the model to reproduce these fields correctly.
+    parsed.meta = {
+      ...parsed.meta,
+      ticker,
+      report_type: formType,
+      filing_date: filingDate,
+    };
     if (!validateTitanResponse(parsed, ticker)) {
       console.error('Titan response failed schema validation.');
       return res.status(502).json({ error: 'AI service returned an invalid analysis format.' });
