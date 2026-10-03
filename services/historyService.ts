@@ -15,6 +15,10 @@ const migrateSummary = (summary: any): EnhancedTitanSchema | null => {
             body.what_this_means = body.recommendation;
         }
         delete body.recommendation;
+        // Older summaries may contain an AI-generated confidence score. It is intentionally not displayed or retained.
+        if (body.what_this_means && typeof body.what_this_means === 'object') {
+            delete body.what_this_means.confidence_level;
+        }
     }
 
     return summary as EnhancedTitanSchema;
