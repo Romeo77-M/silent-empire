@@ -62,8 +62,9 @@ function isBody(body) {
     Array.isArray(body.risk_assessment?.mitigating_factors) &&
     Array.isArray(body.insights) &&
     typeof body.what_this_means?.summary_view === 'string' &&
-    Number.isFinite(body.what_this_means?.confidence_level) &&
-    body.what_this_means.confidence_level >= 0 && body.what_this_means.confidence_level <= 1;
+    body.insights.every(insight => insight && ['positive','negative','neutral'].includes(insight.type) && typeof insight.text === 'string') &&
+    body.risk_assessment.primary_risks.every(item => typeof item === 'string') &&
+    body.risk_assessment.mitigating_factors.every(item => typeof item === 'string');
 }
 
 function isTitanResponse(value) {
@@ -106,7 +107,7 @@ Important evidence rules:
 - Never claim you reviewed the entire filing.
 - Do not invent missing figures, causes, periods, or risks.
 - If a requested metric is not supported by the excerpts, use value 0, change_pct 0, unit "not_available", and explain the limitation in the narrative.
-- Distinguish reported facts from interpretation.
+- Distinguish reported facts from interpretation.\n- Never state or imply a cause (for example, "due to", "because of", "driven by", or "benefited from") unless that causal relationship is explicitly stated in the supplied evidence.\n- Do not convert correlation, timing, or general business context into causation.\n- When evidence supports a change but not its cause, state only the change.\n- Keep material figures tied to the period and units supported by the evidence.
 
 Required shape:
 {
@@ -118,7 +119,7 @@ summary { headline:string, tone:string, executive_takeaway:string }
 key_metrics { revenue:{value:number,unit:string,change_pct:number}, net_income:{value:number,unit:string,change_pct:number}, eps:{value:number,unit:string,change_pct:number} }
 risk_assessment { risk_tier:"low"|"moderate"|"high", primary_risks:string[], mitigating_factors:string[] }
 insights [{type:"positive"|"negative"|"neutral",text:string}]
-what_this_means { summary_view:string, confidence_level:number 0-1 }
+what_this_means { summary_view:string }
 
 "what_this_means.summary_view" explains the filing evidence and its significance for a learner. It must never contain an investment recommendation, rating, target price, or buy/sell/hold instruction.
 Analyst is concise/professional. Simple uses plain English and explains numbers. Human is conversational and beginner-friendly without being condescending. Use a calm, neutral tone.
