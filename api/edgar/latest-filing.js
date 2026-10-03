@@ -51,7 +51,9 @@ export default async function handler(req, res) {
       accessionNo: accession.replace(/-/g, ''),
       primaryDoc,
       form: recent.form[index],
-      filingDate: String(recent.filingDate?.[index] || '')
+      filingDate: String(recent.filingDate?.[index] || ''),
+      reportDate: String(recent.reportDate?.[index] || ''),
+      accessionNumber: accession
     });
   } catch (error) {
     console.error('Error fetching SEC filing metadata:', error);
