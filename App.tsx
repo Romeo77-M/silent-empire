@@ -48,6 +48,7 @@ const App: React.FC = () => {
           // Add the new shared summary to the top of the list.
           return [summary, ...otherSummaries];
         });
+        setChartTicker(summary.meta.ticker);
         setView('list');
         
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -73,6 +74,7 @@ const App: React.FC = () => {
       const normalizedCachedSummary = cachedSummary ? historyService.normalizeSummary(cachedSummary) : null;
       if (normalizedCachedSummary) {
           setSummaries(prev => [normalizedCachedSummary, ...prev.filter(s => s.meta.ticker !== ticker)]);
+          setChartTicker(normalizedCachedSummary.meta.ticker);
           setView('list');
           trackEvent('analyze_ticker', { ticker: ticker, source: 'cache' });
           return;
