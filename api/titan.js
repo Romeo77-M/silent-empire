@@ -86,6 +86,8 @@ Important evidence rules:
 - Do not invent missing figures, causes, periods, or risks.
 - If a requested metric is not supported by the excerpts, use value 0, change_pct 0, unit "not_available", and explain the limitation in the narrative.
 - Distinguish reported facts from interpretation.\n- Never state or imply a cause (for example, "due to", "because of", "driven by", or "benefited from") unless that causal relationship is explicitly stated in the supplied evidence.\n- Do not convert correlation, timing, or general business context into causation.\n- When evidence supports a change but not its cause, state only the change.\n- Keep material figures tied to the period and units supported by the evidence.
+- The response meta ticker must exactly match the requested ticker.
+- Do not guess filing_date, fiscal_period, currency, or report_type. Use only values supported by the filing evidence.
 
 Required shape:
 {
