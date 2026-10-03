@@ -4,6 +4,35 @@ import { validateTitanResponse } from "../lib/titanValidation.js";
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
 const SECTION_BUDGET = 24_000;
+
+const RATE_WINDOW_MS = 60_000;
+const RATE_LIMIT = 6;
+const rateBuckets = new Map();
+
+function getClientKey(req) {
+  const forwarded = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
+  return forwarded || String(req.headers?.['x-real-ip'] || 'anonymous');
+}
+
+function isRateLimited(req) {
+  const now = Date.now();
+  const key = getClientKey(req);
+  const recent = (rateBuckets.get(key) || []).filter(timestamp => now - timestamp < RATE_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT) {
+    rateBuckets.set(key, recent);
+    return true;
+  }
+  recent.push(now);
+  rateBuckets.set(key, recent);
+
+  // Keep the in-memory map bounded on warm serverless instances.
+  if (rateBuckets.size > 1000) {
+    for (const [bucketKey, timestamps] of rateBuckets) {
+      if (!timestamps.some(timestamp => now - timestamp < RATE_WINDOW_MS)) rateBuckets.delete(bucketKey);
+    }
+  }
+  return false;
+}
 function setPrivateCacheHeaders(res) {
   // Titan output is derived from public filings, but keep browser/CDN behavior explicit.
   // Shared server-side analysis caching should use a filing-identity key in a later step.
@@ -57,6 +86,11 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed.' });
+  }
+
+  if (isRateLimited(req)) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ error: 'Too many analysis requests. Please wait a moment and try again.' });
   }
 
   const API_KEY = process.env.GEMINI_API_KEY;
