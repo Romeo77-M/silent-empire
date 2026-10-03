@@ -3,6 +3,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
 const SECTION_BUDGET = 24_000;
+const CACHE_SECONDS = 3600;
+
+function setPrivateCacheHeaders(res) {
+  // Titan output is derived from public filings, but keep browser/CDN behavior explicit.
+  // Shared server-side analysis caching should use a filing-identity key in a later step.
+  res.setHeader('Cache-Control', `private, max-age=0, no-store`);
+}
 
 function cleanText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
@@ -78,6 +85,7 @@ function isTitanResponse(value) {
 }
 
 export default async function handler(req, res) {
+  setPrivateCacheHeaders(res);
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed.' });
