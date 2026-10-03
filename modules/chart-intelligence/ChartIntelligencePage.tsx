@@ -25,11 +25,11 @@ const ChartError: React.FC<{ message: string }> = ({ message }) => (
 );
 
 
-export const ChartIntelligencePage: React.FC = () => {
+interface ChartIntelligencePageProps {\n  initialTicker?: string;\n}\n\nexport const ChartIntelligencePage: React.FC<ChartIntelligencePageProps> = ({ initialTicker = 'AAPL' }) => {
   const svgRef = useRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [patterns, setPatterns] = useState<Array<DetectedPattern & { x: number; y: number }>>([]);
-  const [activeTicker, setActiveTicker] = useState('AAPL');
+  const [activeTicker, setActiveTicker] = useState(initialTicker);
   const [hoveredPattern, setHoveredPattern] = useState<string | null>(null);
   const [activeMarkerIndex, setActiveMarkerIndex] = useState<number | null>(null);
   const [visiblePatternTypes, setVisiblePatternTypes] = useState<Set<string>>(new Set());
