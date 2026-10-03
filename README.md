@@ -45,3 +45,36 @@ Chart Intelligence uses a provider-independent server-side `/api/market-data` en
 ## Development
 
 Production changes should be reviewed on an isolated branch before merging to `main`.
+
+
+## Product and UX direction
+
+Silent Empire should evolve from an AI report generator into a persistent financial-understanding workspace. Keep the current Tactical Calm visual system; prioritize interaction design and comprehension over decorative polish.
+
+Core experience loop:
+
+Search → Understand → Explore → Compare → Return when something changes.
+
+Company pages should become the center of the experience. A future company workspace can organize information as Overview, What Changed, Financials, Risks, and Chart rather than exposing implementation-oriented screens as the primary mental model.
+
+Retention should come from useful continuity and curiosity, not pressure mechanics. High-value directions include:
+- **What Changed?** Compare the latest filing with the previous comparable filing and explain material changes in plain language.
+- Recent analyses and easy continuation from prior companies.
+- Comparison flows that connect naturally from a company summary.
+- Persistent Analyst / Simple / Human explanation preference.
+- Optional alerts when a followed company files a new 10-K or 10-Q.
+- Progressive financial learning that remembers concepts a user has explored.
+
+Avoid building real-time trading infrastructure or portfolio tracking into the MVP. Silent Empire's differentiation is the understanding layer around filings, financial concepts, company changes, risks, comparisons, and educational chart context.
+
+## Commercial design constraints
+
+Build for usefulness first while preserving a path to modest sustainable revenue:
+- keep market-data providers abstracted behind server APIs;
+- cache reusable filing analyses and daily market data aggressively;
+- avoid unnecessary repeated AI generations;
+- design premium value around history, comparisons, monitoring, deeper explanations, and What Changed rather than expensive real-time quotes;
+- add cost/usage telemetry and abuse controls before public beta;
+- do not rely on a market-data plan for commercial use unless its display and redistribution rights explicitly support the product.
+
+A small private beta should precede monetization. The primary validation question is whether non-expert users understand a company materially faster and more confidently after using Silent Empire.
