@@ -97,7 +97,7 @@ export default async function handler(req, res) {
   const filingEvidence = buildFilingEvidence(filingText);
   if (filingEvidence.length < 500) return res.status(422).json({ error: 'Filing text is too short to analyze reliably.' });
   const genAI = new GoogleGenerativeAI(API_KEY);
-  const model = genAI.getGenerativeModel({ model: "Gemini 2.5 Flash-Lite" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
 
   const prompt = `You are Titan, an educational financial-report analyst. Analyze only the supplied filing excerpts. Do not give personalized investment advice or buy/sell/hold instructions. Return one valid JSON object and nothing else.
 
