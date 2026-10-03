@@ -64,8 +64,9 @@ export default async function handler(req, res) {
 
   const ticker = String(req.body?.ticker || '').trim().toUpperCase();
   const filingText = String(req.body?.filingText || '');
-  if (!/^[A-Z0-9.-]{1,15}$/.test(ticker) || !filingText.trim()) {
-    return res.status(400).json({ error: 'A valid ticker and filing text are required.' });
+  const filingIdentity = String(req.body?.filingIdentity || '').trim();
+  if (!/^[A-Z0-9.-]{1,15}$/.test(ticker) || !filingText.trim() || !/^\d{10}-\d{2}-\d{6}$/.test(filingIdentity)) {
+    return res.status(400).json({ error: 'A valid ticker, filing identity, and filing text are required.' });
   }
   if (filingText.length > MAX_REQUEST_CHARS) {
     return res.status(413).json({ error: 'Filing is too large to process safely.' });
