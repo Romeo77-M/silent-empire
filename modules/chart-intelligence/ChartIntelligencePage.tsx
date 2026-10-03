@@ -25,11 +25,19 @@ const ChartError: React.FC<{ message: string }> = ({ message }) => (
 );
 
 
-interface ChartIntelligencePageProps {\n  initialTicker?: string;\n}\n\nexport const ChartIntelligencePage: React.FC<ChartIntelligencePageProps> = ({ initialTicker = 'AAPL' }) => {
+interface ChartIntelligencePageProps {
+  initialTicker?: string;
+}
+
+export const ChartIntelligencePage: React.FC<ChartIntelligencePageProps> = ({ initialTicker = 'AAPL' }) => {
   const svgRef = useRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [patterns, setPatterns] = useState<Array<DetectedPattern & { x: number; y: number }>>([]);
-  const [activeTicker, setActiveTicker] = useState(initialTicker);\n\n  useEffect(() => {\n    setActiveTicker(initialTicker);\n  }, [initialTicker]);
+  const [activeTicker, setActiveTicker] = useState(initialTicker);
+
+  useEffect(() => {
+    setActiveTicker(initialTicker);
+  }, [initialTicker]);
   const [hoveredPattern, setHoveredPattern] = useState<string | null>(null);
   const [activeMarkerIndex, setActiveMarkerIndex] = useState<number | null>(null);
   const [visiblePatternTypes, setVisiblePatternTypes] = useState<Set<string>>(new Set());
@@ -214,7 +222,15 @@ interface ChartIntelligencePageProps {\n  initialTicker?: string;\n}\n\nexport c
   return (
     <div className="p-6 card rounded-lg animate-fade-in">
         <div className="flex justify-between items-center mb-4">
-            <div>\n              <h1 className="text-3xl font-serif text-accent-cyan">Chart Intelligence</h1>\n              <p className="text-sm text-gray-400 mt-1">Educational pattern detection — patterns are observations, not predictions.</p>\n              <div className="mt-3 flex items-center gap-2">\n                <span className="text-xs uppercase tracking-wider text-gray-500">Viewing</span>\n                <span className="rounded-md border border-accent-cyan/40 bg-accent-cyan/10 px-2.5 py-1 text-sm font-bold text-accent-cyan">{activeTicker}</span>\n                <span className="text-xs text-gray-500">Daily · last 100 trading days</span>\n              </div>\n            </div>
+            <div>
+              <h1 className="text-3xl font-serif text-accent-cyan">Chart Intelligence</h1>
+              <p className="text-sm text-gray-400 mt-1">Educational pattern detection — patterns are observations, not predictions.</p>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-xs uppercase tracking-wider text-gray-500">Viewing</span>
+                <span className="rounded-md border border-accent-cyan/40 bg-accent-cyan/10 px-2.5 py-1 text-sm font-bold text-accent-cyan">{activeTicker}</span>
+                <span className="text-xs text-gray-500">Daily · last 100 trading days</span>
+              </div>
+            </div>
             <div className="flex space-x-2">
                 <button aria-pressed={activeTicker === 'AAPL'} onClick={() => setActiveTicker('AAPL')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${getTickerClass('AAPL')}`}>AAPL</button>
                 <button aria-pressed={activeTicker === 'TSLA'} onClick={() => setActiveTicker('TSLA')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${getTickerClass('TSLA')}`}>TSLA</button>
