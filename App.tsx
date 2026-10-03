@@ -75,18 +75,19 @@ const App: React.FC = () => {
         throw new Error('Invalid ticker format.');
       }
       
-      const cachedSummary = cache.get<EnhancedTitanSchema>(ticker);
+      // Fetch SEC metadata first so cached AI output is tied to the exact filing, not just the ticker.
+      const filing = await fetchLatestFilingForTicker(ticker);
+      const cacheKey = `summary:${ticker}:${filing.accessionNumber}`;
+      const cachedSummary = cache.get<EnhancedTitanSchema>(cacheKey);
       const normalizedCachedSummary = cachedSummary ? historyService.normalizeSummary(cachedSummary) : null;
       if (normalizedCachedSummary) {
           setSummaries(prev => [normalizedCachedSummary, ...prev.filter(s => s.meta.ticker !== ticker)]);
           setChartTicker(normalizedCachedSummary.meta.ticker);
           setView('list');
-          trackEvent('analyze_ticker', { ticker: ticker, source: 'cache' });
+          trackEvent('analyze_ticker', { ticker: ticker, source: 'filing_cache' });
           return;
       }
-        
-      const filing = await fetchLatestFilingForTicker(ticker);
-      
+
       const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber });
 
       const newSummary: EnhancedTitanSchema = {
@@ -94,12 +95,15 @@ const App: React.FC = () => {
         meta: {
             ...result.meta,
             file_name: `Source: ${filing.formType} Filing`,
-            filingUrl: filing.url
+            filingUrl: filing.url,
+            filing_date: filing.filingDate || result.meta.filing_date,
+            accessionNumber: filing.accessionNumber,
+            reportDate: filing.reportDate
         },
         perspectives: result.perspectives
       };
 
-      cache.set(ticker, newSummary, 1440); // Cache for 24 hours
+      cache.set(cacheKey, newSummary, 10080); // Reuse this exact filing analysis for 7 days
       setSummaries(prev => [newSummary, ...prev.filter(s => s.meta.ticker !== newSummary.meta.ticker)]);
       setChartTicker(newSummary.meta.ticker);
       setView('list');
