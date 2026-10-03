@@ -29,7 +29,6 @@ export interface TitanSchemaBody {
   insights: Insight[];
   what_this_means: {
     summary_view: string;
-    confidence_level: number;
   };
 }
 
