@@ -33,7 +33,9 @@ const App: React.FC = () => {
 
     if (sharedSummaryData) {
       try {
-        const decodedData = atob(decodeURIComponent(sharedSummaryData));
+        const binary = atob(decodeURIComponent(sharedSummaryData));
+        const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+        const decodedData = new TextDecoder().decode(bytes);
         const parsed = JSON.parse(decodedData);
         const summary = historyService.normalizeSummary(parsed);
         if (!summary) throw new Error('Invalid shared summary format.');
