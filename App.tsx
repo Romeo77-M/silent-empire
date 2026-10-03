@@ -21,7 +21,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<View>(() => (historyService.loadSummaries().length > 0 ? 'list' : 'landing'));
+  const [view, setView] = useState<View>(() => (historyService.loadSummaries().length > 0 ? 'list' : 'landing'));\n  const [chartTicker, setChartTicker] = useState<string>(() => historyService.loadSummaries()[0]?.meta.ticker || 'AAPL');
 
   useEffect(() => {
     historyService.saveSummaries(summaries);
@@ -93,7 +93,7 @@ const App: React.FC = () => {
       };
 
       cache.set(ticker, newSummary, 1440); // Cache for 24 hours
-      setSummaries(prev => [newSummary, ...prev.filter(s => s.meta.ticker !== newSummary.meta.ticker)]);
+      setSummaries(prev => [newSummary, ...prev.filter(s => s.meta.ticker !== newSummary.meta.ticker)]);\n      setChartTicker(newSummary.meta.ticker);
       setView('list');
       trackEvent('analyze_ticker', { ticker: ticker, source: 'api' });
 
