@@ -8,7 +8,7 @@ Silent Empire is an education-first React + TypeScript application that turns pu
 - Vercel serverless functions under `/api`
 - SEC EDGAR for public filing data
 - Gemini for Titan financial-report summarization
-- Alpha Vantage for daily chart data
+- Twelve Data for daily chart data
 
 API credentials are server-side only. Do not expose them with `VITE_` environment variables.
 
@@ -17,7 +17,7 @@ API credentials are server-side only. Do not expose them with `VITE_` environmen
 Configure these in the server/Vercel environment:
 
 - `GEMINI_API_KEY` — required for Titan summaries
-- `ALPHA_VANTAGE_API_KEY` — required for Chart Intelligence
+- `TWELVE_DATA_API_KEY` — required for Chart Intelligence
 - `SEC_USER_AGENT` — recommended; use a real application name and contact email that you control
 
 Never commit secret values.
@@ -40,7 +40,7 @@ Chart patterns are educational observations, not predictions. Pattern explanatio
 
 Ticker → SEC ticker/CIK lookup → latest 10-K or 10-Q → filing text → selected filing evidence → Titan summary → Analyst / Simple / Human explanations.
 
-Chart Intelligence uses a separate server-side market-data endpoint.
+Chart Intelligence uses a provider-independent server-side `/api/market-data` endpoint. The current development provider is Twelve Data, so the frontend is not coupled directly to a market-data vendor.
 
 ## Development
 
