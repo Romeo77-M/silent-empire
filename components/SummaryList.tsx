@@ -4,19 +4,11 @@ import { SummaryCard } from './SummaryCard';
 
 interface SummaryListProps {
   summaries: EnhancedTitanSchema[];
-  selectedSummaryIds: Set<string>;
-  onToggleSelection: (id: string) => void;
-  onExportPDF: (element: HTMLDivElement | null, data: EnhancedTitanSchema) => void;
-  isExporting: boolean;
   onClearAll: () => void;
 }
 
-export const SummaryList: React.FC<SummaryListProps> = ({ 
-  summaries, 
-  selectedSummaryIds, 
-  onToggleSelection, 
-  onExportPDF,
-  isExporting,
+export const SummaryList: React.FC<SummaryListProps> = ({
+  summaries,
   onClearAll,
 }) => {
 
@@ -24,7 +16,7 @@ export const SummaryList: React.FC<SummaryListProps> = ({
     <div className="space-y-8 animate-fade-in">
         <div className="text-center">
             <h2 className="text-3xl font-serif text-white">Your Generated Summaries</h2>
-            <p className="text-gray-400 mt-2">Select two or more summaries to compare.</p>
+            <p className="text-gray-400 mt-2">Review your latest company analyses.</p>
         </div>
         
         {summaries.length > 0 && (
@@ -43,10 +35,6 @@ export const SummaryList: React.FC<SummaryListProps> = ({
                 <SummaryCard
                     key={summary.id}
                     data={summary}
-                    isSelected={selectedSummaryIds.has(summary.id)}
-                    onToggleSelection={onToggleSelection}
-                    onExportPDF={onExportPDF}
-                    isExporting={isExporting}
                 />
             ))}
         </div>
