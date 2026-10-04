@@ -80,6 +80,14 @@ Build for usefulness first while preserving a path to modest sustainable revenue
 A small private beta should precede monetization. The primary validation question is whether non-expert users understand a company materially faster and more confidently after using Silent Empire.
 
 
+## Representative filing validation baseline
+
+Factual QA should include at least one real 10-Q and one real 10-K, using SEC filings as the source of truth rather than earnings articles or AI recollection. The initial deterministic fixtures are Micron Technology's fiscal Q3 2026 10-Q (period ended 2026-05-28) and Apple's fiscal 2025 10-K (period ended 2025-09-27).
+
+For each representative filing, verify the period and units before comparing values. At minimum, compare revenue/net sales, net income, and diluted EPS against the filing's financial statements, then inspect Titan's material narrative and causal statements for support in the selected evidence. A passing schema/build is not sufficient evidence of factual accuracy.
+
+These fixtures are regression anchors, not a claim that Titan output has already passed end-to-end factual validation. Expand the corpus across industries, losses, missing metrics, unusual units, and amended filings as the MVP matures.
+
 ## Beta readiness checklist
 
 Before a public or paid launch:
