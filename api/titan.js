@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { validateTitanResponse } from "../lib/titanValidation.js";
+import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -41,43 +42,6 @@ function setPrivateCacheHeaders(res) {
 
 function cleanText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
-}
-
-const CAUSAL_PATTERNS = [
-  { label: 'due to', pattern: /\bdue to\b/i },
-  { label: 'because of', pattern: /\bbecause of\b/i },
-  { label: 'driven by', pattern: /\bdriven by\b/i },
-  { label: 'benefit from', pattern: /\bbenefit(?:ed|s|ing)? from\b/i },
-  { label: 'result from', pattern: /\bresult(?:ed|s|ing)? from\b/i },
-  { label: 'cause by', pattern: /\bcaus(?:e|ed|es|ing) by\b/i },
-  { label: 'attributable to', pattern: /\battributable to\b/i },
-];
-
-function findCausalPhrases(value) {
-  const text = String(value || '');
-  return CAUSAL_PATTERNS.filter(({ pattern }) => pattern.test(text)).map(({ label }) => label);
-}
-
-function collectNarrativeText(parsed) {
-  const bodies = ['analyst', 'simple', 'human'].map(key => parsed?.perspectives?.[key]).filter(Boolean);
-  return bodies.flatMap(body => [
-    body.summary?.headline,
-    body.summary?.executive_takeaway,
-    ...(body.risk_assessment?.primary_risks || []),
-    ...(body.risk_assessment?.mitigating_factors || []),
-    ...(body.insights || []).map(insight => insight?.text),
-    body.what_this_means?.summary_view,
-  ]).filter(Boolean);
-}
-
-export function hasUnsupportedCausalClaims(parsed, filingEvidence) {
-  const evidenceLower = String(filingEvidence || '').toLowerCase();
-  return collectNarrativeText(parsed).some(text =>
-    findCausalPhrases(text).some(label => {
-      const causalPattern = CAUSAL_PATTERNS.find(item => item.label === label)?.pattern;
-      return causalPattern ? !causalPattern.test(evidenceLower) : false;
-    })
-  );
 }
 
 function buildFilingEvidence(text) {
