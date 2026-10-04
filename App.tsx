@@ -98,7 +98,9 @@ const App: React.FC = () => {
             filingUrl: filing.url,
             filing_date: filing.filingDate || result.meta.filing_date,
             accessionNumber: filing.accessionNumber,
-            reportDate: filing.reportDate
+            reportDate: filing.reportDate,
+            accession_number: filing.accessionNumber,
+            report_date: filing.reportDate || 'not_available'
         },
         perspectives: result.perspectives
       };
