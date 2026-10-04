@@ -70,7 +70,7 @@ function collectNarrativeText(parsed) {
   ]).filter(Boolean);
 }
 
-function hasUnsupportedCausalClaims(parsed, filingEvidence) {
+export function hasUnsupportedCausalClaims(parsed, filingEvidence) {
   const evidenceLower = String(filingEvidence || '').toLowerCase();
   return collectNarrativeText(parsed).some(text =>
     findCausalPhrases(text).some(phrase => !evidenceLower.includes(phrase))
