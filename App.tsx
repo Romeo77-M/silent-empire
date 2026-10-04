@@ -88,7 +88,7 @@ const App: React.FC = () => {
           return;
       }
 
-      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate } });
+      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { companyName: filing.companyName, formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate } });
 
       const newSummary: EnhancedTitanSchema = {
         id: `${result.meta.ticker}-${new Date().getTime()}`,
