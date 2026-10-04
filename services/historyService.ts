@@ -2,7 +2,7 @@ import type { EnhancedTitanSchema } from '../types';
 
 const HISTORY_KEY = 'silent_empire_analysis_history';
 
-const migrateSummary = (summary: any): EnhancedTitanSchema | null => {
+export const migrateSummary = (summary: any): EnhancedTitanSchema | null => {
     if (!summary || typeof summary !== 'object' || !summary.meta || !summary.perspectives) return null;
 
     // Normalize legacy provenance aliases into the authoritative snake_case fields.
