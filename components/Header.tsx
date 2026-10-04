@@ -1,6 +1,6 @@
 import React from 'react';
 
-type View = 'landing' | 'list' | 'comparison' | 'chart';
+type View = 'landing' | 'list' | 'chart';
 
 interface HeaderProps {
     onNavigate: (view: View) => void;
