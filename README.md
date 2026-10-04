@@ -102,6 +102,22 @@ Before a public or paid launch:
 The current in-memory Titan limiter is intentionally a lightweight MVP abuse guard. Serverless instances do not share its state, so it must not be treated as production-grade global rate limiting.
 
 
+## Delivery phases and merge gates
+
+Use explicit gates rather than merging because the branch feels mature.
+
+**Phase 1 — Trustworthy MVP hardening (current).** Secure server-side integrations, validate inputs/outputs, establish SEC provenance, prevent investment-advice leakage, harden market-data integrity, and add automated regression coverage. **Merge gate:** CI and preview deployment green; representative 10-K and 10-Q factual QA completed with no known material mismatch in core figures; material narrative/provenance risks documented or blocked; no exposed secrets; no known critical/high-severity regression.
+
+**Phase 2 — Main-branch stabilization.** After explicit owner approval, merge the hardened MVP to `main` and treat it as the new trusted baseline. Perform focused smoke tests for ticker lookup, SEC retrieval, Titan summary, history/share compatibility, Chart Intelligence, loading/error/no-data states, and production deployment. This phase is stabilization, not feature expansion.
+
+**Phase 3 — Private beta readiness.** Add durable/shared Titan rate limiting, reusable server-side filing cache, privacy-conscious cost/usage telemetry, accessibility/mobile QA, and targeted UX improvements. Recruit roughly 10–25 non-expert testers. Primary question: *Did Silent Empire help you understand this company faster than you could have on your own?*
+
+**Phase 4 — Retention and differentiation.** Build What Changed, stronger company workspace/navigation, comparisons/continuity, and the first connected Knowledge Center experiences. Validate whether users return because Silent Empire helps them understand changes over time.
+
+**Phase 5 — Commercial readiness.** Only after product usefulness is demonstrated: confirm commercial data rights, define free/paid boundaries, establish sustainable cost controls, and selectively introduce premium monitoring/history/learning features. Market Perspective belongs here or later unless an affordable licensed source with suitable display rights becomes available sooner.
+
+A merge to `main` is a release decision, not an automatic result of passing CI. The owner must explicitly approve the merge after the Phase 1 gate is satisfied.
+
 ## Pause-point handoff
 
 Safe pause point: MVP hardening remains isolated on `codex/silent-empire-mvp-hardening` in draft PR #1. Do not merge to `main` without explicit owner approval.
