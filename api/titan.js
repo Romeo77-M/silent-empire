@@ -177,6 +177,8 @@ ${filingEvidence}
       ticker,
       report_type: formType,
       filing_date: filingDate,
+      report_date: reportDate || 'not_available',
+      accession_number: filingIdentity,
     };
     if (!validateTitanResponse(parsed, ticker)) {
       console.error('Titan response failed schema validation.');
