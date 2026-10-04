@@ -43,9 +43,19 @@ function cleanText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
-function containsUnsupportedCausalLanguage(value) {
+const CAUSAL_PHRASES = [
+  'due to',
+  'because of',
+  'driven by',
+  'benefited from',
+  'resulted from',
+  'caused by',
+  'attributable to',
+];
+
+function findCausalPhrases(value) {
   const text = String(value || '').toLowerCase();
-  return /\b(due to|because of|driven by|benefited from|resulted from|caused by|attributable to)\b/.test(text);
+  return CAUSAL_PHRASES.filter(phrase => text.includes(phrase));
 }
 
 function collectNarrativeText(parsed) {
@@ -58,6 +68,13 @@ function collectNarrativeText(parsed) {
     ...(body.insights || []).map(insight => insight?.text),
     body.what_this_means?.summary_view,
   ]).filter(Boolean);
+}
+
+function hasUnsupportedCausalClaims(parsed, filingEvidence) {
+  const evidenceLower = String(filingEvidence || '').toLowerCase();
+  return collectNarrativeText(parsed).some(text =>
+    findCausalPhrases(text).some(phrase => !evidenceLower.includes(phrase))
+  );
 }
 
 function buildFilingEvidence(text) {
@@ -204,13 +221,7 @@ ${filingEvidence}
 
     // Causal language is high-risk in financial summaries. Require the selected filing
     // evidence itself to contain the same causal phrase before allowing it in output.
-    const evidenceLower = filingEvidence.toLowerCase();
-    const unsupportedCausality = collectNarrativeText(parsed).some(text => {
-      if (!containsUnsupportedCausalLanguage(text)) return false;
-      const phrases = String(text).toLowerCase().match(/\b(due to|because of|driven by|benefited from|resulted from|caused by|attributable to)\b/g) || [];
-      return phrases.some(phrase => !evidenceLower.includes(phrase));
-    });
-    if (unsupportedCausality) {
+    if (hasUnsupportedCausalClaims(parsed, filingEvidence)) {
       console.error('Titan response contained unsupported causal language.');
       return res.status(502).json({ error: 'AI service returned claims that could not be grounded in the filing evidence.' });
     }
