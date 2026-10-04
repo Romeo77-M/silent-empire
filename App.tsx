@@ -8,15 +8,13 @@ import { trackEvent } from './services/analyticsService';
 import { Header } from './components/Header';
 import { LandingPage } from './components/LandingPage';
 import { SummaryList } from './components/SummaryList';
-import { ComparisonView } from './components/ComparisonView';
 import { ChartIntelligencePage } from './modules/chart-intelligence/ChartIntelligencePage';
 import { Loader } from './components/Loader';
 
-type View = 'landing' | 'list' | 'comparison' | 'chart';
+type View = 'landing' | 'list' | 'chart';
 
 const App: React.FC = () => {
   const [summaries, setSummaries] = useState<EnhancedTitanSchema[]>(() => historyService.loadSummaries());
-  const [selectedSummaryIds, setSelectedSummaryIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>(() => (historyService.loadSummaries().length > 0 ? 'list' : 'landing'));
@@ -139,24 +137,12 @@ const App: React.FC = () => {
   const handleClearAll = () => {
     if (window.confirm('Are you sure you want to clear your entire analysis history? This action cannot be undone.')) {
         setSummaries([]);
-        setSelectedSummaryIds(new Set());
         setError(null);
         setIsLoading(false);
         setView('landing');
     }
   }
 
-  const handleToggleSelection = (id: string) => {
-    setSelectedSummaryIds(prev => {
-        const newSelection = new Set(prev);
-        if (newSelection.has(id)) {
-            newSelection.delete(id);
-        } else {
-            newSelection.add(id);
-        }
-        return newSelection;
-    });
-  };
 
 
   const renderContent = () => {
@@ -182,9 +168,6 @@ const App: React.FC = () => {
             onClearAll={handleClearAll}
           />
         );
-      case 'comparison':
-        const selectedSummaries = summaries.filter(s => selectedSummaryIds.has(s.id));
-        return <ComparisonView summaries={selectedSummaries} />;
       case 'chart':
         return <ChartIntelligencePage initialTicker={chartTicker} recentTickers={recentChartTickers} onTickerChange={setChartTicker} />;
       default:
