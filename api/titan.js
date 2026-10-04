@@ -135,7 +135,7 @@ Important evidence rules:
 - The response meta ticker must exactly match the requested ticker.
 - SEC filing identity is trusted metadata supplied separately from the filing excerpts.
 - Use the trusted SEC form type and filing date below for report_type and filing_date. Do not override or reinterpret them.
-- Do not guess fiscal_period or currency. Use only values supported by the filing evidence.
+- Do not guess fiscal_period or currency. Use only values supported by the filing evidence. If either is not supported, return the exact string "not_available" for that field.
 
 Required shape:
 {
