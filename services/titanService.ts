@@ -25,6 +25,7 @@ interface TitanMultiPerspectiveResponse {
 }
 
 interface FilingMetadata {
+  companyName: string;
   formType: string;
   filingDate: string;
   reportDate: string;
