@@ -39,8 +39,8 @@ export interface TitanMeta {
     fiscal_period: string;
     currency: string;
     filing_date: string;
-    report_date?: string;
-    accession_number?: string;
+    report_date: string;
+    accession_number: string;
     file_name?: string;
     filingUrl?: string;
     accessionNumber?: string;
