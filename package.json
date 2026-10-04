@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test lib/*.test.js"
+    "test": "node --experimental-strip-types --test lib/*.test.js lib/*.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
