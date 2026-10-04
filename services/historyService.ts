@@ -5,6 +5,11 @@ const HISTORY_KEY = 'silent_empire_analysis_history';
 const migrateSummary = (summary: any): EnhancedTitanSchema | null => {
     if (!summary || typeof summary !== 'object' || !summary.meta || !summary.perspectives) return null;
 
+    // Normalize legacy provenance aliases into the authoritative snake_case fields.
+    if (!summary.meta.report_date && summary.meta.reportDate) summary.meta.report_date = summary.meta.reportDate;
+    if (!summary.meta.accession_number && summary.meta.accessionNumber) summary.meta.accession_number = summary.meta.accessionNumber;
+    if (summary.meta.report_date === '') summary.meta.report_date = 'not_available';
+
     const perspectives = ['analyst', 'simple', 'human'];
     for (const name of perspectives) {
         const body = summary.perspectives[name];
