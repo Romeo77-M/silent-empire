@@ -173,8 +173,10 @@ Important evidence rules:
 - Distinguish reported facts from interpretation.\n- Never state or imply a cause (for example, "due to", "because of", "driven by", or "benefited from") unless that causal relationship is explicitly stated in the supplied evidence.\n- Do not convert correlation, timing, or general business context into causation.\n- When evidence supports a change but not its cause, state only the change.\n- Keep material figures tied to the period and units supported by the evidence.
 - The response meta ticker must exactly match the requested ticker.
 - SEC filing identity is trusted metadata supplied separately from the filing excerpts.
-- Use the trusted SEC form type and filing date below for report_type and filing_date. Do not override or reinterpret them.
-- Do not guess fiscal_period or currency. Use only values supported by the filing evidence. If either is not supported, return the exact string "not_available" for that field.
+- Use the trusted SEC company name, form type, filing date, and report period end below. Do not override or reinterpret them.
+- The server will make company_name, ticker, report_type, filing_date, and report_date authoritative after generation.
+- Set fiscal_period to the trusted SEC report period end date exactly as supplied below. If SEC did not supply one, use "not_available".
+- Do not guess currency. Use only a three-letter ISO currency code supported by the filing evidence. If unsupported, return "not_available".
 
 Required shape:
 {
@@ -218,6 +220,7 @@ ${filingEvidence}
       ticker,
       report_type: formType,
       filing_date: filingDate,
+      fiscal_period: reportDate || 'not_available',
       report_date: reportDate || 'not_available',
       accession_number: filingIdentity,
     };
