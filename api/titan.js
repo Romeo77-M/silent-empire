@@ -43,19 +43,19 @@ function cleanText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
-const CAUSAL_PHRASES = [
-  'due to',
-  'because of',
-  'driven by',
-  'benefited from',
-  'resulted from',
-  'caused by',
-  'attributable to',
+const CAUSAL_PATTERNS = [
+  { label: 'due to', pattern: /\bdue to\b/i },
+  { label: 'because of', pattern: /\bbecause of\b/i },
+  { label: 'driven by', pattern: /\bdriven by\b/i },
+  { label: 'benefit from', pattern: /\bbenefit(?:ed|s|ing)? from\b/i },
+  { label: 'result from', pattern: /\bresult(?:ed|s|ing)? from\b/i },
+  { label: 'cause by', pattern: /\bcaus(?:e|ed|es|ing) by\b/i },
+  { label: 'attributable to', pattern: /\battributable to\b/i },
 ];
 
 function findCausalPhrases(value) {
-  const text = String(value || '').toLowerCase();
-  return CAUSAL_PHRASES.filter(phrase => text.includes(phrase));
+  const text = String(value || '');
+  return CAUSAL_PATTERNS.filter(({ pattern }) => pattern.test(text)).map(({ label }) => label);
 }
 
 function collectNarrativeText(parsed) {
@@ -73,7 +73,10 @@ function collectNarrativeText(parsed) {
 export function hasUnsupportedCausalClaims(parsed, filingEvidence) {
   const evidenceLower = String(filingEvidence || '').toLowerCase();
   return collectNarrativeText(parsed).some(text =>
-    findCausalPhrases(text).some(phrase => !evidenceLower.includes(phrase))
+    findCausalPhrases(text).some(label => {
+      const causalPattern = CAUSAL_PATTERNS.find(item => item.label === label)?.pattern;
+      return causalPattern ? !causalPattern.test(evidenceLower) : false;
+    })
   );
 }
 
