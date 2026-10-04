@@ -43,6 +43,23 @@ function cleanText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
+function containsUnsupportedCausalLanguage(value) {
+  const text = String(value || '').toLowerCase();
+  return /\b(due to|because of|driven by|benefited from|resulted from|caused by|attributable to)\b/.test(text);
+}
+
+function collectNarrativeText(parsed) {
+  const bodies = ['analyst', 'simple', 'human'].map(key => parsed?.perspectives?.[key]).filter(Boolean);
+  return bodies.flatMap(body => [
+    body.summary?.headline,
+    body.summary?.executive_takeaway,
+    ...(body.risk_assessment?.primary_risks || []),
+    ...(body.risk_assessment?.mitigating_factors || []),
+    ...(body.insights || []).map(insight => insight?.text),
+    body.what_this_means?.summary_view,
+  ]).filter(Boolean);
+}
+
 function buildFilingEvidence(text) {
   const normalized = cleanText(text);
   if (normalized.length <= MAX_ANALYSIS_CHARS) return normalized;
@@ -184,6 +201,20 @@ ${filingEvidence}
       console.error('Titan response failed schema validation.');
       return res.status(502).json({ error: 'AI service returned an invalid analysis format.' });
     }
+
+    // Causal language is high-risk in financial summaries. Require the selected filing
+    // evidence itself to contain the same causal phrase before allowing it in output.
+    const evidenceLower = filingEvidence.toLowerCase();
+    const unsupportedCausality = collectNarrativeText(parsed).some(text => {
+      if (!containsUnsupportedCausalLanguage(text)) return false;
+      const phrases = String(text).toLowerCase().match(/\b(due to|because of|driven by|benefited from|resulted from|caused by|attributable to)\b/g) || [];
+      return phrases.some(phrase => !evidenceLower.includes(phrase));
+    });
+    if (unsupportedCausality) {
+      console.error('Titan response contained unsupported causal language.');
+      return res.status(502).json({ error: 'AI service returned claims that could not be grounded in the filing evidence.' });
+    }
+
     return res.status(200).json(parsed);
   } catch (error) {
     console.error('Titan generation failed:', error);
