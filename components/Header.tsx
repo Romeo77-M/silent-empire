@@ -1,5 +1,4 @@
 import React from 'react';
-import { trackEvent } from '../services/analyticsService';
 
 type View = 'landing' | 'list' | 'comparison' | 'chart';
 
@@ -39,18 +38,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView, onReset
             <span className="text-gray-700 cursor-not-allowed">Glossary</span>
         </nav>
 
-        <div>
-            {currentView === 'comparison' ? (
-                <div className="flex items-center space-x-4">
-                    {hasSummaries && (
-                         <button 
-                            onClick={onReset}
-                            className="px-4 py-2 text-sm font-semibold text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/50 rounded-md hover:bg-accent-cyan/20 transition-colors"
-                        >
-                            New Analysis
-                        </button>
-                    )}
-                </div>
+        <div className="flex items-center space-x-4">
+            {hasSummaries && currentView !== 'landing' && (
+                <button
+                    onClick={onReset}
+                    className="px-4 py-2 text-sm font-semibold text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/50 rounded-md hover:bg-accent-cyan/20 transition-colors"
+                >
+                    New Analysis
+                </button>
             )}
         </div>
       </div>
