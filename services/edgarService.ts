@@ -17,6 +17,7 @@ const fetchJson = async (url: string, options?: RequestInit, timeoutMs = 15000) 
 
 interface FilingInfo {
     text: string;
+    companyName: string;
     url: string;
     formType: string;
     filingDate: string;
@@ -29,7 +30,7 @@ export const fetchLatestFilingForTicker = async (ticker: string): Promise<Filing
         // Step 1: Get CIK from ticker
         const { response: cikResponse, payload: cikPayload } = await fetchJson(`/api/edgar/ticker-to-cik?ticker=${encodeURIComponent(ticker)}`);
         if (!cikResponse.ok) throw new Error(cikPayload?.error || 'Failed to find ticker');
-        const { cik } = cikPayload;
+        const { cik, companyName } = cikPayload;
 
         // Step 2: Get latest filing info
         const { response: filingResponse, payload: filingPayload } = await fetchJson(`/api/edgar/latest-filing?cik=${encodeURIComponent(cik)}`);
@@ -45,7 +46,7 @@ export const fetchLatestFilingForTicker = async (ticker: string): Promise<Filing
         if (!contentResponse.ok) throw new Error(contentPayload?.error || 'Failed to fetch filing content');
         const { text, url } = contentPayload;
 
-        return { text, url, formType: form, filingDate, reportDate, accessionNumber };
+        return { text, companyName, url, formType: form, filingDate, reportDate, accessionNumber };
 
     } catch (error) {
         console.error('Error in fetchLatestFilingForTicker:', error);
