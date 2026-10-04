@@ -4,7 +4,6 @@ import { generateTitanSummary } from './services/titanService';
 import { fetchLatestFilingForTicker } from './services/edgarService';
 import * as cache from './services/cacheService';
 import * as historyService from './services/historyService';
-import { exportAsPDF } from './services/pdfService';
 import { trackEvent } from './services/analyticsService';
 import { Header } from './components/Header';
 import { LandingPage } from './components/LandingPage';
@@ -19,7 +18,6 @@ const App: React.FC = () => {
   const [summaries, setSummaries] = useState<EnhancedTitanSchema[]>(() => historyService.loadSummaries());
   const [selectedSummaryIds, setSelectedSummaryIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isExporting, setIsExporting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<View>(() => (historyService.loadSummaries().length > 0 ? 'list' : 'landing'));
   const [chartTicker, setChartTicker] = useState<string>(() => historyService.loadSummaries()[0]?.meta.ticker || 'AAPL');
@@ -160,20 +158,6 @@ const App: React.FC = () => {
     });
   };
 
-  const handleExportPDF = async (element: HTMLDivElement | null, summary: EnhancedTitanSchema) => {
-    if (!element) return;
-
-    setIsExporting(true);
-    try {
-        await exportAsPDF(element, `Silent_Empire_Summary_${summary.meta.ticker}.pdf`);
-        trackEvent('export_pdf', { ticker: summary.meta.ticker });
-    } catch (error) {
-        console.error("Failed to export PDF:", error);
-        trackEvent('export_pdf_error', { ticker: summary.meta.ticker });
-    } finally {
-        setIsExporting(false);
-    }
-  };
 
   const renderContent = () => {
     if (isLoading) return <Loader />;
@@ -195,10 +179,6 @@ const App: React.FC = () => {
         return (
           <SummaryList
             summaries={summaries}
-            selectedSummaryIds={selectedSummaryIds}
-            onToggleSelection={handleToggleSelection}
-            onExportPDF={handleExportPDF}
-            isExporting={isExporting}
             onClearAll={handleClearAll}
           />
         );
@@ -218,7 +198,6 @@ const App: React.FC = () => {
         onNavigate={setView}
         currentView={view}
         onReset={handleReset}
-        selectedCount={selectedSummaryIds.size}
         hasSummaries={summaries.length > 0}
       />
       <main className="container mx-auto p-4 md:p-8">
