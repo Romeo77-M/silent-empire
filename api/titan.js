@@ -137,6 +137,7 @@ export default async function handler(req, res) {
   const filingText = String(req.body?.filingText || '');
   const filingIdentity = String(req.body?.filingIdentity || '').trim();
   const filingMetadata = req.body?.filingMetadata || {};
+  const companyName = cleanText(filingMetadata.companyName).slice(0, 300);
   const formType = String(filingMetadata.formType || '').trim().toUpperCase();
   const filingDate = String(filingMetadata.filingDate || '').trim();
   const reportDate = String(filingMetadata.reportDate || '').trim();
@@ -145,6 +146,7 @@ export default async function handler(req, res) {
     !/^[A-Z0-9.-]{1,15}$/.test(ticker) ||
     !filingText.trim() ||
     !/^\d{10}-\d{2}-\d{6}$/.test(filingIdentity) ||
+    !companyName ||
     !['10-K', '10-Q'].includes(formType) ||
     !validDate(filingDate) ||
     (reportDate && !validDate(reportDate))
@@ -190,6 +192,7 @@ what_this_means { summary_view:string }
 Analyst is concise/professional. Simple uses plain English and explains numbers. Human is conversational and beginner-friendly without being condescending. Use a calm, neutral tone.
 
 Ticker: ${ticker}
+Trusted SEC company name: ${companyName}
 Trusted SEC form type: ${formType}
 Trusted SEC filing date: ${filingDate}
 Trusted SEC report period end: ${reportDate || 'not_available'}
@@ -211,6 +214,7 @@ ${filingEvidence}
     // SEC metadata is authoritative; never rely on the model to reproduce these fields correctly.
     parsed.meta = {
       ...parsed.meta,
+      company_name: companyName,
       ticker,
       report_type: formType,
       filing_date: filingDate,
