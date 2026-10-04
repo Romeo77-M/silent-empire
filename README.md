@@ -101,3 +101,14 @@ Safe pause point: MVP hardening remains isolated on `codex/silent-empire-mvp-har
 Resume in this order: confirm CI and deployment are green; validate representative 10-K and 10-Q summaries against source filings; design durable shared Titan caching keyed by SEC accession; replace the in-memory limiter before broad public access; complete mobile/accessibility/error-state QA; then begin `What Changed` using latest versus prior comparable filings.
 
 Secrets, paid-provider decisions, commercial data licensing, and any merge to `main` remain human approval boundaries.
+
+
+## Knowledge Center and learning architecture
+
+The Knowledge Center should become Silent Empire's connected education layer, not a disconnected blog. Build the architecture before producing a large content library.
+
+Learning progression: concepts and glossary → financial-report literacy → chart/candle recognition → pattern context and setup evaluation → decision scenarios. Articles and carefully curated external videos can deepen individual topics, while contextual links from summaries and Chart Intelligence should bring learners directly to the concept they need.
+
+Advanced decision scenarios should evaluate decision quality from the information available at that moment rather than reward hindsight or whichever choice later made money. Scenario feedback should emphasize evidence, confirmation, uncertainty, invalidation, and risk awareness. The scenario system can grow over time; do not block the trustworthy MVP on a large scenario library.
+
+Future learning content should be reusable across the product so a definition, lesson, chart concept, scenario, or video resource can be linked contextually rather than duplicated.
