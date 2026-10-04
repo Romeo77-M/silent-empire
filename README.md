@@ -112,3 +112,14 @@ Learning progression: concepts and glossary → financial-report literacy → ch
 Advanced decision scenarios should evaluate decision quality from the information available at that moment rather than reward hindsight or whichever choice later made money. Scenario feedback should emphasize evidence, confirmation, uncertainty, invalidation, and risk awareness. The scenario system can grow over time; do not block the trustworthy MVP on a large scenario library.
 
 Future learning content should be reusable across the product so a definition, lesson, chart concept, scenario, or video resource can be linked contextually rather than duplicated.
+
+
+## Market Perspective direction
+
+A future **Market Perspective** area can add outside analyst consensus without turning Titan into an investment recommender. Keep three evidence classes visually and technically distinct: **Company evidence** (SEC-reported facts), **Titan interpretation** (educational explanation), and **Market perspective** (third-party analyst opinions).
+
+When implemented, analyst ratings, estimate counts, price-target ranges, and consensus changes should come from a licensed structured data source with clear attribution and source links. Calculate aggregates deterministically from provider data; Titan may explain the aggregate but must not invent, alter, or present it as Silent Empire's own recommendation. Always communicate that analyst consensus is opinion, can be wrong, and is one input among company fundamentals, risks, valuation, and market context.
+
+The educational opportunity is disagreement: show when filings, analyst consensus, and chart context point in different directions, then help the learner understand what evidence matters and what remains uncertain. This can later feed Decision Lab scenarios that grade reasoning rather than hindsight.
+
+Do not implement this feature until commercial display/redistribution rights and data economics are acceptable. The future company-workspace information architecture can reserve a natural place for it: **Overview → What Changed → Financials → Risks → Market Perspective → Chart → Learn**.
