@@ -3,7 +3,7 @@ import { validateTitanResponse } from "../lib/titanValidation.js";
 import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
 import { verifyCoreMetrics, hasVerifiedCoreMetrics } from "../lib/titanFactualVerification.js";
 import { applyVerifiedMetricChanges } from "../lib/secMetricChanges.js";
-import { inferCoreFactsCurrency } from "../lib/secFactNormalization.js";
+import { normalizeSecCoreFacts, inferCoreFactsCurrency } from "../lib/secFactNormalization.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -104,7 +104,18 @@ export default async function handler(req, res) {
   const filingText = String(req.body?.filingText || '');
   const filingIdentity = String(req.body?.filingIdentity || '').trim();
   const filingMetadata = req.body?.filingMetadata || {};
-  const coreFacts = req.body?.coreFacts || null;
+  const suppliedCoreFacts = req.body?.coreFacts || null;
+  const allowedCoreFactKeys = new Set(['revenue', 'net_income', 'eps']);
+  const validCoreFacts =
+    suppliedCoreFacts === null ||
+    (suppliedCoreFacts &&
+      typeof suppliedCoreFacts === 'object' &&
+      !Array.isArray(suppliedCoreFacts) &&
+      Object.keys(suppliedCoreFacts).every(key => allowedCoreFactKeys.has(key)));
+  if (!validCoreFacts) {
+    return res.status(400).json({ error: 'Invalid core financial facts.' });
+  }
+  const coreFacts = suppliedCoreFacts ? normalizeSecCoreFacts(suppliedCoreFacts) : null;
   const coreMetricChanges = req.body?.coreMetricChanges || null;
   const allowedCoreMetricKeys = new Set(['revenue', 'net_income', 'eps']);
   const validCoreMetricChanges =
