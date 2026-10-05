@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { validateTitanResponse } from "../lib/titanValidation.js";
 import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
-import { verifyCoreMetrics } from "../lib/titanFactualVerification.js";
+import { verifyCoreMetrics, hasVerifiedCoreMetrics } from "../lib/titanFactualVerification.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -128,10 +128,7 @@ export default async function handler(req, res) {
     net_income: coreFacts.net_income ? { value: coreFacts.net_income.value, unit: coreFacts.net_income.unit } : null,
     eps: coreFacts.eps ? { value: coreFacts.eps.value, unit: coreFacts.eps.unit } : null,
   } : null;
-  const completeCoreMetrics = trustedCoreMetrics &&
-    trustedCoreMetrics.revenue &&
-    trustedCoreMetrics.net_income &&
-    trustedCoreMetrics.eps;
+  const hasTrustedCoreMetrics = hasVerifiedCoreMetrics(trustedCoreMetrics);
 
   const filingEvidence = buildFilingEvidence(filingText);
   if (filingEvidence.length < 500) return res.status(422).json({ error: 'Filing text is too short to analyze reliably.' });
@@ -175,11 +172,11 @@ Trusted SEC form type: ${formType}
 Trusted SEC filing date: ${filingDate}
 Trusted SEC report period end: ${reportDate || 'not_available'}
 Trusted SEC accession: ${filingIdentity}
-${completeCoreMetrics ? `Trusted SEC structured core facts (authoritative for metric values and units):
-Revenue: ${trustedCoreMetrics.revenue.value} ${trustedCoreMetrics.revenue.unit}
-Net income: ${trustedCoreMetrics.net_income.value} ${trustedCoreMetrics.net_income.unit}
-Diluted EPS: ${trustedCoreMetrics.eps.value} ${trustedCoreMetrics.eps.unit}
-Use these exact values and units in all three perspectives. Do not rescale or reinterpret them.` : ''}
+${hasTrustedCoreMetrics ? `Trusted SEC structured core facts (authoritative where present):
+${trustedCoreMetrics.revenue ? `Revenue: ${trustedCoreMetrics.revenue.value} ${trustedCoreMetrics.revenue.unit}` : 'Revenue: not supplied as a trusted structured fact'}
+${trustedCoreMetrics.net_income ? `Net income: ${trustedCoreMetrics.net_income.value} ${trustedCoreMetrics.net_income.unit}` : 'Net income: not supplied as a trusted structured fact'}
+${trustedCoreMetrics.eps ? `Diluted EPS: ${trustedCoreMetrics.eps.value} ${trustedCoreMetrics.eps.unit}` : 'Diluted EPS: not supplied as a trusted structured fact'}
+For each supplied structured fact, use that exact value and unit in all three perspectives. Do not rescale or reinterpret it. Do not treat an absent structured fact as zero.` : ''}
 Selected filing evidence:
 """
 ${filingEvidence}
@@ -210,7 +207,7 @@ ${filingEvidence}
       return res.status(502).json({ error: 'AI service returned an invalid analysis format.' });
     }
 
-    if (completeCoreMetrics && !verifyCoreMetrics(parsed.perspectives, trustedCoreMetrics)) {
+    if (hasTrustedCoreMetrics && !verifyCoreMetrics(parsed.perspectives, trustedCoreMetrics)) {
       console.error('Titan core metrics disagreed with trusted SEC structured facts.');
       return res.status(502).json({ error: 'AI service returned financial metrics that did not match SEC structured facts.' });
     }
