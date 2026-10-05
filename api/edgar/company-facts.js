@@ -1,4 +1,4 @@
-const CIK_PATTERN = /^\d{1,10}$/;
+import { normalizeCik, validateCompanyFactsPayload } from '../../lib/secCompanyFacts.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -7,9 +7,8 @@ export default async function handler(req, res) {
   if (!userAgent) return res.status(500).json({ error: 'SEC API configuration missing' });
 
   const cik = String(req.query?.cik || '').trim();
-  if (!CIK_PATTERN.test(cik)) return res.status(400).json({ error: 'Invalid CIK' });
-
-  const paddedCik = cik.padStart(10, '0');
+  const paddedCik = normalizeCik(cik);
+  if (!paddedCik) return res.status(400).json({ error: 'Invalid CIK' });
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
 
@@ -25,16 +24,11 @@ export default async function handler(req, res) {
     if (!response.ok) return res.status(response.status).json({ error: 'SEC company facts request failed' });
 
     const payload = await response.json();
-    if (!payload || String(payload.cik || '') !== String(Number(cik)) || typeof payload.facts !== 'object') {
-      return res.status(502).json({ error: 'Invalid SEC company facts response' });
-    }
+    const validated = validateCompanyFactsPayload(payload, cik);
+    if (!validated) return res.status(502).json({ error: 'Invalid SEC company facts response' });
 
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=86400');
-    return res.status(200).json({
-      cik: String(payload.cik),
-      entityName: String(payload.entityName || ''),
-      facts: payload.facts,
-    });
+    return res.status(200).json(validated);
   } catch (error) {
     if (error?.name === 'AbortError') return res.status(504).json({ error: 'SEC company facts request timed out' });
     return res.status(502).json({ error: 'Unable to fetch SEC company facts' });
