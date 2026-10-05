@@ -86,7 +86,7 @@ Factual QA should include at least one real 10-Q and one real 10-K, using SEC fi
 
 For each representative filing, verify the period and units before comparing values. At minimum, compare revenue/net sales, net income, and diluted EPS against the filing's financial statements, then inspect Titan's material narrative and causal statements for support in the selected evidence. A passing schema/build is not sufficient evidence of factual accuracy.
 
-These fixtures are regression anchors, not a claim that Titan output has already passed end-to-end factual validation. Expand the corpus across industries, losses, missing metrics, unusual units, and amended filings as the MVP matures.
+These fixtures are regression anchors. The filing-backed core figures for the representative Micron 10-Q and Apple 10-K have been checked against their SEC filing presentation anchors, and the automated contract verifies that material core-metric mismatches fail factual verification. Narrative/causal grounding remains guarded by the Titan evidence checks; broader issuer coverage remains a post-MVP maturation task. Expand the corpus across industries, losses, missing metrics, unusual units, and amended filings as the MVP matures.
 
 ## Beta readiness checklist
 
