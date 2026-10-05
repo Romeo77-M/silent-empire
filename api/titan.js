@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { validateTitanResponse } from "../lib/titanValidation.js";
 import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
+import { verifyCoreMetrics } from "../lib/titanFactualVerification.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -101,6 +102,7 @@ export default async function handler(req, res) {
   const filingText = String(req.body?.filingText || '');
   const filingIdentity = String(req.body?.filingIdentity || '').trim();
   const filingMetadata = req.body?.filingMetadata || {};
+  const coreFacts = req.body?.coreFacts || null;
   const companyName = cleanText(filingMetadata.companyName).slice(0, 300);
   const formType = String(filingMetadata.formType || '').trim().toUpperCase();
   const filingDate = String(filingMetadata.filingDate || '').trim();
@@ -120,6 +122,16 @@ export default async function handler(req, res) {
   if (filingText.length > MAX_REQUEST_CHARS) {
     return res.status(413).json({ error: 'Filing is too large to process safely.' });
   }
+
+  const trustedCoreMetrics = coreFacts ? {
+    revenue: coreFacts.revenue ? { value: coreFacts.revenue.value, unit: coreFacts.revenue.unit } : null,
+    net_income: coreFacts.net_income ? { value: coreFacts.net_income.value, unit: coreFacts.net_income.unit } : null,
+    eps: coreFacts.eps ? { value: coreFacts.eps.value, unit: coreFacts.eps.unit } : null,
+  } : null;
+  const completeCoreMetrics = trustedCoreMetrics &&
+    trustedCoreMetrics.revenue &&
+    trustedCoreMetrics.net_income &&
+    trustedCoreMetrics.eps;
 
   const filingEvidence = buildFilingEvidence(filingText);
   if (filingEvidence.length < 500) return res.status(422).json({ error: 'Filing text is too short to analyze reliably.' });
@@ -163,6 +175,11 @@ Trusted SEC form type: ${formType}
 Trusted SEC filing date: ${filingDate}
 Trusted SEC report period end: ${reportDate || 'not_available'}
 Trusted SEC accession: ${filingIdentity}
+${completeCoreMetrics ? `Trusted SEC structured core facts (authoritative for metric values and units):
+Revenue: ${trustedCoreMetrics.revenue.value} ${trustedCoreMetrics.revenue.unit}
+Net income: ${trustedCoreMetrics.net_income.value} ${trustedCoreMetrics.net_income.unit}
+Diluted EPS: ${trustedCoreMetrics.eps.value} ${trustedCoreMetrics.eps.unit}
+Use these exact values and units in all three perspectives. Do not rescale or reinterpret them.` : ''}
 Selected filing evidence:
 """
 ${filingEvidence}
@@ -191,6 +208,11 @@ ${filingEvidence}
     if (!validateTitanResponse(parsed, ticker)) {
       console.error('Titan response failed schema validation.');
       return res.status(502).json({ error: 'AI service returned an invalid analysis format.' });
+    }
+
+    if (completeCoreMetrics && !verifyCoreMetrics(parsed.perspectives, trustedCoreMetrics)) {
+      console.error('Titan core metrics disagreed with trusted SEC structured facts.');
+      return res.status(502).json({ error: 'AI service returned financial metrics that did not match SEC structured facts.' });
     }
 
     // Causal language is high-risk in financial summaries. Require the selected filing
