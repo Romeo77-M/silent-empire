@@ -116,22 +116,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid core financial facts.' });
   }
   let coreFacts = suppliedCoreFacts ? normalizeSecCoreFacts(suppliedCoreFacts) : null;
-  const coreMetricChanges = req.body?.coreMetricChanges || null;
+  const suppliedCoreMetricChanges = req.body?.coreMetricChanges || null;
   const allowedCoreMetricKeys = new Set(['revenue', 'net_income', 'eps']);
   const validCoreMetricChanges =
-    coreMetricChanges === null ||
-    (coreMetricChanges &&
-      typeof coreMetricChanges === 'object' &&
-      !Array.isArray(coreMetricChanges) &&
-      Object.keys(coreMetricChanges).every(key => allowedCoreMetricKeys.has(key)) &&
+    suppliedCoreMetricChanges === null ||
+    (suppliedCoreMetricChanges &&
+      typeof suppliedCoreMetricChanges === 'object' &&
+      !Array.isArray(suppliedCoreMetricChanges) &&
+      Object.keys(suppliedCoreMetricChanges).every(key => allowedCoreMetricKeys.has(key)) &&
       ['revenue', 'net_income', 'eps'].every(key =>
-        coreMetricChanges[key] === undefined ||
-        coreMetricChanges[key] === null ||
-        (Number.isFinite(coreMetricChanges[key]) && Math.abs(coreMetricChanges[key]) <= 1_000_000)
+        suppliedCoreMetricChanges[key] === undefined ||
+        suppliedCoreMetricChanges[key] === null ||
+        (Number.isFinite(suppliedCoreMetricChanges[key]) && Math.abs(suppliedCoreMetricChanges[key]) <= 1_000_000)
       ));
   if (!validCoreMetricChanges) {
     return res.status(400).json({ error: 'Invalid core metric comparison data.' });
   }
+  const coreMetricChanges = suppliedCoreMetricChanges
+    ? { ...suppliedCoreMetricChanges }
+    : null;
   const companyName = cleanText(filingMetadata.companyName).slice(0, 300);
   const formType = String(filingMetadata.formType || '').trim().toUpperCase();
   const filingDate = String(filingMetadata.filingDate || '').trim();
