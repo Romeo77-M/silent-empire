@@ -35,6 +35,7 @@ interface CoreFact {
 
 interface FilingMetadata {
   companyName: string;
+  cik: string;
   formType: string;
   filingDate: string;
   reportDate: string;
