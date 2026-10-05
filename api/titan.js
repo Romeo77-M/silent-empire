@@ -106,6 +106,21 @@ export default async function handler(req, res) {
   const filingMetadata = req.body?.filingMetadata || {};
   const coreFacts = req.body?.coreFacts || null;
   const coreMetricChanges = req.body?.coreMetricChanges || null;
+  const allowedCoreMetricKeys = new Set(['revenue', 'net_income', 'eps']);
+  const validCoreMetricChanges =
+    coreMetricChanges === null ||
+    (coreMetricChanges &&
+      typeof coreMetricChanges === 'object' &&
+      !Array.isArray(coreMetricChanges) &&
+      Object.keys(coreMetricChanges).every(key => allowedCoreMetricKeys.has(key)) &&
+      ['revenue', 'net_income', 'eps'].every(key =>
+        coreMetricChanges[key] === undefined ||
+        coreMetricChanges[key] === null ||
+        Number.isFinite(coreMetricChanges[key])
+      ));
+  if (!validCoreMetricChanges) {
+    return res.status(400).json({ error: 'Invalid core metric comparison data.' });
+  }
   const companyName = cleanText(filingMetadata.companyName).slice(0, 300);
   const formType = String(filingMetadata.formType || '').trim().toUpperCase();
   const filingDate = String(filingMetadata.filingDate || '').trim();
