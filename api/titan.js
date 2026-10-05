@@ -137,6 +137,7 @@ export default async function handler(req, res) {
       accessionNumber: filingIdentity,
       formType,
       reportDate,
+      filingDate,
     });
     coreFacts = derived.coreFacts;
     coreMetricChanges = derived.coreMetricChanges;
