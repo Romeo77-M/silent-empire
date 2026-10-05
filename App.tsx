@@ -3,6 +3,7 @@ import type { EnhancedTitanSchema } from './types';
 import { generateTitanSummary } from './services/titanService';
 import { fetchLatestFilingForTicker, fetchCompanyFacts } from './services/edgarService';
 import { extractCoreFactsForFiling } from './lib/secCoreFacts.js';
+import { normalizeSecCoreFacts } from './lib/secFactNormalization.js';
 import * as cache from './services/cacheService';
 import * as historyService from './services/historyService';
 import { trackEvent } from './services/analyticsService';
@@ -88,11 +89,11 @@ const App: React.FC = () => {
       let coreFacts;
       try {
         const companyFacts = await fetchCompanyFacts(filing.cik);
-        coreFacts = extractCoreFactsForFiling(companyFacts, {
+        coreFacts = normalizeSecCoreFacts(extractCoreFactsForFiling(companyFacts, {
           accessionNumber: filing.accessionNumber,
           formType: filing.formType,
           reportDate: filing.reportDate,
-        });
+        }));
       } catch (factsError) {
         console.warn('SEC structured facts unavailable; continuing with filing text only.', factsError);
       }
