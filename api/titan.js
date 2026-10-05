@@ -3,6 +3,7 @@ import { validateTitanResponse } from "../lib/titanValidation.js";
 import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
 import { verifyCoreMetrics, hasVerifiedCoreMetrics } from "../lib/titanFactualVerification.js";
 import { applyVerifiedMetricChanges } from "../lib/secMetricChanges.js";
+import { inferCoreFactsCurrency } from "../lib/secFactNormalization.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -131,6 +132,7 @@ export default async function handler(req, res) {
     eps: coreFacts.eps ? { value: coreFacts.eps.value, unit: coreFacts.eps.unit } : null,
   } : null;
   const hasTrustedCoreMetrics = hasVerifiedCoreMetrics(trustedCoreMetrics);
+  const trustedCurrency = inferCoreFactsCurrency(coreFacts);
 
   const filingEvidence = buildFilingEvidence(filingText);
   if (filingEvidence.length < 500) return res.status(422).json({ error: 'Filing text is too short to analyze reliably.' });
@@ -203,6 +205,7 @@ ${filingEvidence}
       fiscal_period: reportDate || 'not_available',
       report_date: reportDate || 'not_available',
       accession_number: filingIdentity,
+      ...(trustedCurrency ? { currency: trustedCurrency } : {}),
     };
     if (!validateTitanResponse(parsed, ticker)) {
       console.error('Titan response failed schema validation.');
