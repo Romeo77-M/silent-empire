@@ -115,7 +115,7 @@ export default async function handler(req, res) {
   if (!validCoreFacts) {
     return res.status(400).json({ error: 'Invalid core financial facts.' });
   }
-  const coreFacts = suppliedCoreFacts ? normalizeSecCoreFacts(suppliedCoreFacts) : null;
+  let coreFacts = suppliedCoreFacts ? normalizeSecCoreFacts(suppliedCoreFacts) : null;
   const coreMetricChanges = req.body?.coreMetricChanges || null;
   const allowedCoreMetricKeys = new Set(['revenue', 'net_income', 'eps']);
   const validCoreMetricChanges =
@@ -150,6 +150,19 @@ export default async function handler(req, res) {
   }
   if (filingText.length > MAX_REQUEST_CHARS) {
     return res.status(413).json({ error: 'Filing is too large to process safely.' });
+  }
+
+  if (coreFacts) {
+    coreFacts = Object.fromEntries(
+      Object.entries(coreFacts).map(([key, fact]) => [
+        key,
+        fact &&
+        fact.accessionNumber === filingIdentity &&
+        (!reportDate || fact.reportDate === reportDate)
+          ? fact
+          : null,
+      ])
+    );
   }
 
   const trustedCoreMetrics = coreFacts ? {
