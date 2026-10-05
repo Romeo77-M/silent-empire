@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { detectPatterns } from './SmartPatternDetector';
+import { detectPatterns, type DetectedPattern } from './SmartPatternDetector';
 import { ChartOverlayTips } from './ChartOverlayTips';
 import { PatternExplanationList } from './PatternExplanationList';
 import { fetchDailyChartData } from '../../services/marketDataService';
@@ -25,12 +25,25 @@ const ChartError: React.FC<{ message: string }> = ({ message }) => (
 );
 
 
-export const ChartIntelligencePage: React.FC = () => {
+interface ChartIntelligencePageProps {
+  initialTicker?: string;
+  recentTickers?: string[];
+  onTickerChange?: (ticker: string) => void;
+}
+
+export const ChartIntelligencePage: React.FC<ChartIntelligencePageProps> = ({ initialTicker = 'AAPL', recentTickers = [], onTickerChange }) => {
   const svgRef = useRef(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [patterns, setPatterns] = useState<any[]>([]);
-  const [activeTicker, setActiveTicker] = useState('AAPL');
+  const [patterns, setPatterns] = useState<Array<DetectedPattern & { x: number; y: number }>>([]);
+  const [activeTicker, setActiveTicker] = useState(initialTicker);
+
+  useEffect(() => {
+    setActiveTicker(initialTicker);
+  }, [initialTicker]);
   const [hoveredPattern, setHoveredPattern] = useState<string | null>(null);
+  const [activeMarkerIndex, setActiveMarkerIndex] = useState<number | null>(null);
+  const [visiblePatternTypes, setVisiblePatternTypes] = useState<Set<string>>(new Set());
+  const [showPatternMarkers, setShowPatternMarkers] = useState(false);
   
   const [chartData, setChartData] = useState<CandlestickData[]>([]);
   const [isChartLoading, setIsChartLoading] = useState<boolean>(true);
@@ -105,7 +118,8 @@ export const ChartIntelligencePage: React.FC = () => {
         .range([dimensions.height - margin.bottom, margin.top]);
 
       const found = detectPatterns(chartData);
-      setPatterns(found.map(f => ({ ...f, x: x(chartData[f.index].date)!, y: y(chartData[f.index].high) - 20 })));
+      setPatterns(found.map(f => ({ ...f, x: x(chartData[f.index].date)! + x.bandwidth() / 2, y: y(chartData[f.index].high) - 14 })));
+      setVisiblePatternTypes(prev => prev.size > 0 ? prev : new Set(found.map(item => item.pattern)));
   }, [chartData, dimensions.width, dimensions.height]);
 
 
@@ -191,36 +205,93 @@ export const ChartIntelligencePage: React.FC = () => {
 
   }, [chartData, dimensions, patterns, hoveredPattern]);
   
-  const getTickerClass = (ticker: string) => {
-    return activeTicker === ticker ? 'bg-accent-cyan text-base-graphite' : 'bg-gray-800 text-gray-400 hover:bg-gray-700';
-  }
+  const patternTypes = Array.from(new Set(patterns.map(pattern => pattern.pattern)));
+  const visiblePatterns = patterns.filter(pattern => visiblePatternTypes.has(pattern.pattern));
+
+  const togglePatternType = (pattern: string) => {
+    setVisiblePatternTypes(prev => {
+      const next = new Set(prev);
+      next.has(pattern) ? next.delete(pattern) : next.add(pattern);
+      return next;
+    });
+    setActiveMarkerIndex(null);
+  };
+
+  const selectTicker = (ticker: string) => {
+    setActiveTicker(ticker);
+    onTickerChange?.(ticker);
+  };
 
   return (
     <div className="p-6 card rounded-lg animate-fade-in">
-        <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-serif text-accent-cyan">Chart Intelligence</h1>
-            <div className="flex space-x-2">
-                <button onClick={() => setActiveTicker('AAPL')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${getTickerClass('AAPL')}`}>AAPL</button>
-                <button onClick={() => setActiveTicker('TSLA')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${getTickerClass('TSLA')}`}>TSLA</button>
-                <button onClick={() => setActiveTicker('NVDA')} className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${getTickerClass('NVDA')}`}>NVDA</button>
-            </div>
+        <div className="mb-4">
+          <h1 className="text-3xl font-serif text-accent-cyan">Chart Intelligence</h1>
+          <p className="mt-1 text-sm text-gray-400">Educational pattern detection — patterns are observations, not predictions.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="rounded-md border border-accent-cyan/40 bg-accent-cyan/10 px-2.5 py-1 text-sm font-bold text-accent-cyan">{activeTicker}</span>
+            <span className="text-xs text-gray-500">Daily · last 100 trading days</span>
+            {recentTickers.length > 0 && (
+              <>
+                <span className="mx-1 text-gray-700" aria-hidden="true">|</span>
+                <span className="text-xs text-gray-500">Recent</span>
+                {recentTickers.map(ticker => (
+                  <button
+                    key={ticker}
+                    type="button"
+                    onClick={() => selectTicker(ticker)}
+                    className="rounded-md border border-gray-700 bg-gray-900/60 px-2.5 py-1 text-xs font-semibold text-gray-300 transition-colors hover:border-accent-cyan/40 hover:text-accent-cyan"
+                  >
+                    {ticker}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
         </div>
-      <div ref={containerRef} className="relative w-full min-h-[300px]">
+      {!isChartLoading && !chartError && patternTypes.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2" aria-label="Pattern controls">
+          <button
+            type="button"
+            aria-pressed={showPatternMarkers}
+            onClick={() => { setShowPatternMarkers(value => !value); setActiveMarkerIndex(null); }}
+            className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors ${showPatternMarkers ? 'border-accent-cyan/60 bg-accent-cyan/15 text-accent-cyan' : 'border-gray-700 bg-gray-900/60 text-gray-300 hover:border-accent-cyan/40'}`}
+          >
+            {showPatternMarkers ? 'Hide candle info' : 'Show candle info'}
+          </button>
+          {showPatternMarkers && <span className="ml-2 mr-1 text-xs uppercase tracking-wider text-gray-500">Filter</span>}
+          {showPatternMarkers && patternTypes.map(pattern => (
+            <button
+              key={pattern}
+              type="button"
+              aria-pressed={visiblePatternTypes.has(pattern)}
+              onClick={() => togglePatternType(pattern)}
+              className={`rounded-full border px-3 py-1 text-xs transition-colors ${visiblePatternTypes.has(pattern) ? 'border-accent-cyan/50 bg-accent-cyan/10 text-accent-cyan' : 'border-gray-700 bg-gray-900/50 text-gray-500'}`}
+            >
+              {pattern.replace(/([a-z])([A-Z])/g, '$1 $2')}
+            </button>
+          ))}
+        </div>
+      )}
+      <div ref={containerRef} className="relative w-full min-h-[300px]" onClick={() => setActiveMarkerIndex(null)}>
         {isChartLoading && <ChartLoader />}
         {chartError && <ChartError message={chartError} />}
         
         <svg ref={svgRef} width={dimensions.width} height={dimensions.height}></svg>
         
-        {!isChartLoading && !chartError && patterns.map((p, i) => (
-          <ChartOverlayTips 
-            key={i} 
-            pattern={p.pattern} 
-            x={p.x} 
-            y={p.y}
-            onMouseEnter={() => setHoveredPattern(p.pattern)}
-            onMouseLeave={() => setHoveredPattern(null)}
-          />
-        ))}
+        {!isChartLoading && !chartError && showPatternMarkers && visiblePatterns.map((p) => {
+          const markerIndex = patterns.indexOf(p);
+          return (
+            <ChartOverlayTips
+              key={`${p.pattern}-${p.index}`}
+              pattern={p.pattern}
+              x={p.x}
+              y={p.y}
+              isActive={activeMarkerIndex === markerIndex}
+              onActivate={() => { setActiveMarkerIndex(markerIndex); setHoveredPattern(p.pattern); }}
+              onDeactivate={() => { setActiveMarkerIndex(null); setHoveredPattern(null); }}
+            />
+          );
+        })}
       </div>
       {!isChartLoading && !chartError && (
        <PatternExplanationList 

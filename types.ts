@@ -1,7 +1,7 @@
 export interface Metric {
   value: number;
   unit: string;
-  change_pct: number;
+  change_pct: number | null;
 }
 
 export interface Insight {
@@ -14,7 +14,6 @@ export interface TitanSchemaBody {
   summary: {
     headline: string;
     tone: string;
-    overall_score: number;
     executive_takeaway: string;
   };
   key_metrics: {
@@ -28,9 +27,8 @@ export interface TitanSchemaBody {
     mitigating_factors: string[];
   };
   insights: Insight[];
-  recommendation: {
+  what_this_means: {
     summary_view: string;
-    confidence_level: number;
   };
 }
 
@@ -41,8 +39,12 @@ export interface TitanMeta {
     fiscal_period: string;
     currency: string;
     filing_date: string;
+    report_date: string;
+    accession_number: string;
     file_name?: string;
     filingUrl?: string;
+    accessionNumber?: string;
+    reportDate?: string;
 }
 
 // The new primary data structure for a summary.

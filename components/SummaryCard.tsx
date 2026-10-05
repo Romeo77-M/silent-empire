@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import type { EnhancedTitanSchema } from '../types';
 import { trackEvent } from '../services/analyticsService';
 import { KeyMetrics } from './KeyMetrics';
@@ -7,14 +7,10 @@ import { RiskAssessment } from './RiskAssessment';
 import { Insights } from './Insights';
 import { Recommendation } from './Recommendation';
 import { SummaryHeader } from './SummaryHeader';
-import { LightbulbIcon, UserIcon, ChartBarIcon, ShareIcon } from './icons/Icons';
+import { LightbulbIcon, UserIcon, ChartBarIcon } from './icons/Icons';
 
 interface SummaryCardProps {
   data: EnhancedTitanSchema;
-  isSelected: boolean;
-  onToggleSelection: (id: string) => void;
-  onExportPDF: (element: HTMLDivElement | null, data: EnhancedTitanSchema) => void;
-  isExporting: boolean;
 }
 
 type Perspective = 'analyst' | 'simple' | 'human';
@@ -63,11 +59,9 @@ const PerspectiveTabs: React.FC<{ active: Perspective, setActive: (p: Perspectiv
     );
 };
 
-export const SummaryCard: React.FC<SummaryCardProps> = ({ data, isSelected, onToggleSelection, onExportPDF, isExporting }) => {
+export const SummaryCard: React.FC<SummaryCardProps> = ({ data }) => {
     const [activePerspective, setActivePerspective] = useState<Perspective>('simple');
-    const [isLinkCopied, setIsLinkCopied] = useState(false);
-    const pdfRef = useRef<HTMLDivElement>(null);
-
+ 
     const perspectiveData = data.perspectives[activePerspective];
 
     const handleSetPerspective = (p: Perspective) => {
@@ -75,36 +69,10 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ data, isSelected, onTo
         trackEvent('change_perspective', { perspective: p, ticker: data.meta.ticker });
     }
 
-    const handleShare = async () => {
-        try {
-            const jsonString = JSON.stringify(data);
-            const encodedData = encodeURIComponent(btoa(jsonString));
-            const url = `${window.location.origin}${window.location.pathname}?summary=${encodedData}`;
-
-            const shareMethod = navigator.share ? 'native' : 'clipboard';
-            trackEvent('share_summary', { ticker: data.meta.ticker, method: shareMethod });
-
-            if (navigator.share) {
-                await navigator.share({
-                    title: `Financial Summary for ${data.meta.ticker}`,
-                    text: `Check out this AI-generated financial summary for ${data.meta.company_name}.`,
-                    url: url,
-                });
-            } else {
-                await navigator.clipboard.writeText(url);
-                setIsLinkCopied(true);
-                setTimeout(() => setIsLinkCopied(false), 2000);
-            }
-        } catch (error) {
-            console.error('Failed to share:', error);
-            trackEvent('share_summary_error', { ticker: data.meta.ticker });
-            alert('Failed to share summary.');
-        }
-    };
 
     return (
-        <div className={`transition-all duration-300 ${isSelected ? 'ring-2 ring-highlight-gold rounded-lg' : ''}`}>
-            <div ref={pdfRef} className="dashboard-background p-1 rounded-lg">
+        <div className="transition-all duration-300">
+            <div className="dashboard-background p-1 rounded-lg">
                 <div className="p-4 md:p-6 bg-base-graphite rounded-lg">
                     <Disclaimer />
                     <SummaryHeader meta={data.meta} summary={data.perspectives.analyst.summary} />
@@ -123,38 +91,11 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ data, isSelected, onTo
                                 <RiskAssessment assessment={perspectiveData.risk_assessment} />
                             </div>
                         </div>
-                        <Recommendation recommendation={perspectiveData.recommendation} />
+                        <Recommendation whatThisMeans={perspectiveData.what_this_means} />
                     </div>
                 </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => onToggleSelection(data.id)}
-                        className="form-checkbox h-5 w-5 rounded bg-gray-800 border-gray-600 text-highlight-gold focus:ring-highlight-gold"
-                    />
-                    <span className="text-gray-400">Select for Comparison</span>
-                </label>
-                 <div className="flex items-center space-x-2">
-                    <button
-                        onClick={handleShare}
-                        className="px-4 py-2 text-sm font-semibold text-highlight-gold bg-highlight-gold/10 border border-highlight-gold/50 rounded-md hover:bg-highlight-gold/20 transition-colors flex items-center gap-2"
-                    >
-                        <ShareIcon className="w-4 h-4" />
-                        {isLinkCopied ? 'Link Copied!' : 'Share'}
-                    </button>
-                    <button
-                        onClick={() => onExportPDF(pdfRef.current, data)}
-                        disabled={isExporting}
-                        className="px-4 py-2 text-sm font-semibold text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/50 rounded-md hover:bg-accent-cyan/20 transition-colors disabled:opacity-50 disabled:cursor-wait"
-                    >
-                        {isExporting ? 'Exporting...' : 'Export as PDF'}
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };

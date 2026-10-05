@@ -7,9 +7,6 @@ interface SummaryHeaderProps {
 }
 
 export const SummaryHeader: React.FC<SummaryHeaderProps> = ({ meta, summary }) => {
-    
-    const score = summary.overall_score * 10;
-    const scoreColorValue = score >= 70 ? '#3BA272' : score >= 40 ? '#F4C542' : '#E35A5A';
 
     return (
         <div className="p-6 card rounded-lg">
@@ -19,6 +16,9 @@ export const SummaryHeader: React.FC<SummaryHeaderProps> = ({ meta, summary }) =
                     <h2 className="font-serif text-5xl text-accent-cyan my-2">{meta.company_name} ({meta.ticker})</h2>
                     <p className="text-xs text-gray-500 mt-1">
                         {meta.file_name || 'Ticker-based Analysis'} &bull; Filed: {meta.filing_date}
+                        {(meta.report_date || meta.reportDate) && (meta.report_date || meta.reportDate) !== 'not_available' && (
+                            <> &bull; Period ended: {meta.report_date || meta.reportDate}</>
+                        )}
                         {meta.filingUrl && (
                              <>
                                 {' '}&bull;{' '}
@@ -33,15 +33,6 @@ export const SummaryHeader: React.FC<SummaryHeaderProps> = ({ meta, summary }) =
                              </>
                         )}
                     </p>
-                </div>
-                <div className="text-center mt-6 md:mt-0 md:ml-8 flex-shrink-0">
-                    <div 
-                        className="health-score-circle mx-auto"
-                        style={{ '--score': score, '--score-color': scoreColorValue } as React.CSSProperties}
-                    >
-                        <span className="font-serif text-5xl text-white metric-value">{score.toFixed(0)}</span>
-                        <span className="text-xs text-gray-400 tracking-widest mt-1">HEALTH SCORE</span>
-                    </div>
                 </div>
             </div>
             <div className="border-t border-gray-800/70 mt-6 pt-4">

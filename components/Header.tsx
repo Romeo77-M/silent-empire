@@ -1,26 +1,20 @@
 import React from 'react';
-import { trackEvent } from '../services/analyticsService';
 
-type View = 'landing' | 'list' | 'comparison' | 'chart';
+type View = 'landing' | 'list' | 'chart';
 
 interface HeaderProps {
     onNavigate: (view: View) => void;
     currentView: View;
     onReset: () => void;
-    selectedCount: number;
     hasSummaries: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView, onReset, selectedCount, hasSummaries }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView, onReset, hasSummaries }) => {
 
   const getLinkClass = (view: View) => {
     return currentView === view ? 'text-accent-cyan font-semibold' : 'text-gray-400 hover:text-gray-200 transition-colors';
   }
 
-  const handleCompareClick = () => {
-    trackEvent('view_comparison', { count: selectedCount });
-    onNavigate('comparison');
-  }
 
   return (
     <header className="p-4 border-b border-gray-800/50 sticky top-0 bg-base-graphite/80 backdrop-blur-sm z-40">
@@ -44,32 +38,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentView, onReset
             <span className="text-gray-700 cursor-not-allowed">Glossary</span>
         </nav>
 
-        <div>
-            {currentView === 'list' && selectedCount > 1 ? (
-                <button 
-                    onClick={handleCompareClick}
-                    className="px-4 py-2 text-sm font-semibold text-highlight-gold bg-highlight-gold/10 border border-highlight-gold/50 rounded-md hover:bg-highlight-gold/20 transition-colors"
-                >
-                    Compare ({selectedCount})
-                </button>
-            ) : currentView === 'comparison' ? (
-                <button 
-                    onClick={() => onNavigate('list')}
+        <div className="flex items-center space-x-4">
+            {hasSummaries && currentView !== 'landing' && (
+                <button
+                    onClick={onReset}
                     className="px-4 py-2 text-sm font-semibold text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/50 rounded-md hover:bg-accent-cyan/20 transition-colors"
                 >
-                    Back to Summaries
+                    New Analysis
                 </button>
-            ) : (
-                <div className="flex items-center space-x-4">
-                    {hasSummaries && (
-                         <button 
-                            onClick={onReset}
-                            className="px-4 py-2 text-sm font-semibold text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/50 rounded-md hover:bg-accent-cyan/20 transition-colors"
-                        >
-                            Add New Ticker
-                        </button>
-                    )}
-                </div>
             )}
         </div>
       </div>

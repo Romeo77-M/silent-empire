@@ -1,33 +1,48 @@
-interface Candlestick {
-    date: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
+import type { CandlestickData } from '../../types';
+
+export interface DetectedPattern {
+  index: number;
+  pattern: 'Doji' | 'Hammer' | 'ShootingStar' | 'BullishEngulfing' | 'BearishEngulfing';
 }
 
-export function detectPatterns(data: Candlestick[]) {
-  const detected = [];
+export function detectPatterns(data: CandlestickData[]): DetectedPattern[] {
+  const detected: DetectedPattern[] = [];
+
   for (let i = 1; i < data.length; i++) {
     const prev = data[i - 1];
     const curr = data[i];
     const body = Math.abs(curr.close - curr.open);
     const range = curr.high - curr.low;
-    
-    // Prevent division by zero
-    if (range === 0) continue;
+    if (range <= 0) continue;
 
     const upperWick = curr.high - Math.max(curr.close, curr.open);
     const lowerWick = Math.min(curr.close, curr.open) - curr.low;
 
-    // Doji
-    if (body / range < 0.1) detected.push({ index: i, pattern: 'Doji' });
-    // Hammer
-    else if (lowerWick > 2 * body && curr.close > curr.open) detected.push({ index: i, pattern: 'Hammer' });
-    // Shooting Star
-    else if (upperWick > 2 * body && curr.close < curr.open) detected.push({ index: i, pattern: 'ShootingStar' });
-    // Engulfing
-    else if (Math.sign(curr.close - curr.open) !== Math.sign(prev.close - prev.open) && Math.abs(curr.close - curr.open) > Math.abs(prev.close - prev.open)) detected.push({ index: i, pattern: 'Engulfing' });
+    if (body / range <= 0.1) {
+      detected.push({ index: i, pattern: 'Doji' });
+      continue;
+    }
+
+    const smallUpperWick = upperWick <= body;
+    const smallLowerWick = lowerWick <= body;
+
+    if (lowerWick >= 2 * body && smallUpperWick) {
+      detected.push({ index: i, pattern: 'Hammer' });
+    } else if (upperWick >= 2 * body && smallLowerWick) {
+      detected.push({ index: i, pattern: 'ShootingStar' });
+    }
+
+    const prevBullish = prev.close > prev.open;
+    const prevBearish = prev.close < prev.open;
+    const currBullish = curr.close > curr.open;
+    const currBearish = curr.close < curr.open;
+
+    if (prevBearish && currBullish && curr.open <= prev.close && curr.close >= prev.open) {
+      detected.push({ index: i, pattern: 'BullishEngulfing' });
+    } else if (prevBullish && currBearish && curr.open >= prev.close && curr.close <= prev.open) {
+      detected.push({ index: i, pattern: 'BearishEngulfing' });
+    }
   }
+
   return detected;
 }

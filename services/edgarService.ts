@@ -1,43 +1,63 @@
 // services/edgarService.ts
 
+const fetchJson = async (url: string, options?: RequestInit, timeoutMs = 15000) => {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    const payload = await response.json().catch(() => null);
+    return { response, payload };
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw new Error('Request timed out. Please try again.');
+    throw error;
+  } finally {
+    window.clearTimeout(timer);
+  }
+};
+
 interface FilingInfo {
     text: string;
+    companyName: string;
     url: string;
     formType: string;
+    filingDate: string;
+    reportDate: string;
+    accessionNumber: string;
+    cik: string;
 }
 
 export const fetchLatestFilingForTicker = async (ticker: string): Promise<FilingInfo> => {
     try {
         // Step 1: Get CIK from ticker
-        const cikResponse = await fetch(`/api/edgar/ticker-to-cik?ticker=${encodeURIComponent(ticker)}`);
-        if (!cikResponse.ok) {
-            const error = await cikResponse.json();
-            throw new Error(error.error || 'Failed to find ticker');
-        }
-        const { cik } = await cikResponse.json();
+        const { response: cikResponse, payload: cikPayload } = await fetchJson(`/api/edgar/ticker-to-cik?ticker=${encodeURIComponent(ticker)}`);
+        if (!cikResponse.ok) throw new Error(cikPayload?.error || 'Failed to find ticker');
+        const { cik, companyName } = cikPayload;
 
         // Step 2: Get latest filing info
-        const filingResponse = await fetch(`/api/edgar/latest-filing?cik=${cik}`);
-        if (!filingResponse.ok) {
-            const error = await filingResponse.json();
-            throw new Error(error.error || 'Failed to find filing');
-        }
-        const { accessionNo, primaryDoc, form } = await filingResponse.json();
+        const { response: filingResponse, payload: filingPayload } = await fetchJson(`/api/edgar/latest-filing?cik=${encodeURIComponent(cik)}`);
+        if (!filingResponse.ok) throw new Error(filingPayload?.error || 'Failed to find filing');
+        const { accessionNo, primaryDoc, form, filingDate, reportDate, accessionNumber } = filingPayload;
 
         // Step 3: Get filing content
-        const contentResponse = await fetch(
-            `/api/edgar/filing-content?cik=${cik}&accessionNo=${accessionNo}&primaryDoc=${encodeURIComponent(primaryDoc)}`
+        const { response: contentResponse, payload: contentPayload } = await fetchJson(
+            `/api/edgar/filing-content?cik=${encodeURIComponent(cik)}&accessionNo=${encodeURIComponent(accessionNo)}&primaryDoc=${encodeURIComponent(primaryDoc)}`,
+            undefined,
+            30000
         );
-        if (!contentResponse.ok) {
-            const error = await contentResponse.json();
-            throw new Error(error.error || 'Failed to fetch filing content');
-        }
-        const { text, url } = await contentResponse.json();
+        if (!contentResponse.ok) throw new Error(contentPayload?.error || 'Failed to fetch filing content');
+        const { text, url } = contentPayload;
 
-        return { text, url, formType: form };
+        return { text, companyName, url, formType: form, filingDate, reportDate, accessionNumber, cik: String(cik) };
 
     } catch (error) {
         console.error('Error in fetchLatestFilingForTicker:', error);
         throw error;
     }
+};
+
+export const fetchCompanyFacts = async (cik: string): Promise<Record<string, unknown>> => {
+    const { response, payload } = await fetchJson(`/api/edgar/company-facts?cik=${encodeURIComponent(cik)}`);
+    if (!response.ok) throw new Error(payload?.error || 'Failed to fetch SEC company facts');
+    if (!payload?.facts || typeof payload.facts !== 'object') throw new Error('Invalid SEC company facts response');
+    return payload.facts as Record<string, unknown>;
 };
