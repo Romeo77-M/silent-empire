@@ -127,7 +127,7 @@ export default async function handler(req, res) {
       ['revenue', 'net_income', 'eps'].every(key =>
         coreMetricChanges[key] === undefined ||
         coreMetricChanges[key] === null ||
-        Number.isFinite(coreMetricChanges[key])
+        (Number.isFinite(coreMetricChanges[key]) && Math.abs(coreMetricChanges[key]) <= 1_000_000)
       ));
   if (!validCoreMetricChanges) {
     return res.status(400).json({ error: 'Invalid core metric comparison data.' });
