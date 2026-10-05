@@ -1,7 +1,7 @@
 export interface Metric {
   value: number;
   unit: string;
-  change_pct: number;
+  change_pct: number | null;
 }
 
 export interface Insight {
