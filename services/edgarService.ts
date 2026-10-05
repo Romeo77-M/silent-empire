@@ -23,6 +23,7 @@ interface FilingInfo {
     filingDate: string;
     reportDate: string;
     accessionNumber: string;
+    cik: string;
 }
 
 export const fetchLatestFilingForTicker = async (ticker: string): Promise<FilingInfo> => {
@@ -46,10 +47,17 @@ export const fetchLatestFilingForTicker = async (ticker: string): Promise<Filing
         if (!contentResponse.ok) throw new Error(contentPayload?.error || 'Failed to fetch filing content');
         const { text, url } = contentPayload;
 
-        return { text, companyName, url, formType: form, filingDate, reportDate, accessionNumber };
+        return { text, companyName, url, formType: form, filingDate, reportDate, accessionNumber, cik: String(cik) };
 
     } catch (error) {
         console.error('Error in fetchLatestFilingForTicker:', error);
         throw error;
     }
+};
+
+export const fetchCompanyFacts = async (cik: string): Promise<Record<string, unknown>> => {
+    const { response, payload } = await fetchJson(`/api/edgar/company-facts?cik=${encodeURIComponent(cik)}`);
+    if (!response.ok) throw new Error(payload?.error || 'Failed to fetch SEC company facts');
+    if (!payload?.facts || typeof payload.facts !== 'object') throw new Error('Invalid SEC company facts response');
+    return payload.facts as Record<string, unknown>;
 };
