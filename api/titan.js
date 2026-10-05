@@ -3,7 +3,7 @@ import { validateTitanResponse } from "../lib/titanValidation.js";
 import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
 import { verifyCoreMetrics, hasVerifiedCoreMetrics } from "../lib/titanFactualVerification.js";
 import { applyVerifiedMetricChanges } from "../lib/secMetricChanges.js";
-import { normalizeSecCoreFacts, inferCoreFactsCurrency } from "../lib/secFactNormalization.js";
+import { normalizeSecCoreFacts, inferCoreFactsCurrency, bindCoreFactsToFiling } from "../lib/secFactNormalization.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -153,16 +153,10 @@ export default async function handler(req, res) {
   }
 
   if (coreFacts) {
-    coreFacts = Object.fromEntries(
-      Object.entries(coreFacts).map(([key, fact]) => [
-        key,
-        fact &&
-        fact.accessionNumber === filingIdentity &&
-        (!reportDate || fact.reportDate === reportDate)
-          ? fact
-          : null,
-      ])
-    );
+    coreFacts = bindCoreFactsToFiling(coreFacts, {
+      accessionNumber: filingIdentity,
+      reportDate,
+    });
   }
 
   const trustedCoreMetrics = coreFacts ? {
