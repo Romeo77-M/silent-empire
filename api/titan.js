@@ -3,8 +3,9 @@ import { validateTitanResponse } from "../lib/titanValidation.js";
 import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
 import { verifyCoreMetrics, hasVerifiedCoreMetrics } from "../lib/titanFactualVerification.js";
 import { applyVerifiedMetricChanges } from "../lib/secMetricChanges.js";
-import { normalizeSecCoreFacts, inferCoreFactsCurrency, bindCoreFactsToFiling } from "../lib/secFactNormalization.js";
 import { normalizeCik } from "../lib/secCompanyFacts.js";
+import { fetchSecCompanyFacts } from "../lib/secCompanyFactsFetch.js";
+import { deriveSecFinancials } from "../lib/secFinancialDerivation.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -105,37 +106,6 @@ export default async function handler(req, res) {
   const filingText = String(req.body?.filingText || '');
   const filingIdentity = String(req.body?.filingIdentity || '').trim();
   const filingMetadata = req.body?.filingMetadata || {};
-  const suppliedCoreFacts = req.body?.coreFacts || null;
-  const allowedCoreFactKeys = new Set(['revenue', 'net_income', 'eps']);
-  const validCoreFacts =
-    suppliedCoreFacts === null ||
-    (suppliedCoreFacts &&
-      typeof suppliedCoreFacts === 'object' &&
-      !Array.isArray(suppliedCoreFacts) &&
-      Object.keys(suppliedCoreFacts).every(key => allowedCoreFactKeys.has(key)));
-  if (!validCoreFacts) {
-    return res.status(400).json({ error: 'Invalid core financial facts.' });
-  }
-  let coreFacts = suppliedCoreFacts ? normalizeSecCoreFacts(suppliedCoreFacts) : null;
-  const suppliedCoreMetricChanges = req.body?.coreMetricChanges || null;
-  const allowedCoreMetricKeys = new Set(['revenue', 'net_income', 'eps']);
-  const validCoreMetricChanges =
-    suppliedCoreMetricChanges === null ||
-    (suppliedCoreMetricChanges &&
-      typeof suppliedCoreMetricChanges === 'object' &&
-      !Array.isArray(suppliedCoreMetricChanges) &&
-      Object.keys(suppliedCoreMetricChanges).every(key => allowedCoreMetricKeys.has(key)) &&
-      ['revenue', 'net_income', 'eps'].every(key =>
-        suppliedCoreMetricChanges[key] === undefined ||
-        suppliedCoreMetricChanges[key] === null ||
-        (Number.isFinite(suppliedCoreMetricChanges[key]) && Math.abs(suppliedCoreMetricChanges[key]) <= 1_000_000)
-      ));
-  if (!validCoreMetricChanges) {
-    return res.status(400).json({ error: 'Invalid core metric comparison data.' });
-  }
-  const coreMetricChanges = suppliedCoreMetricChanges
-    ? { ...suppliedCoreMetricChanges }
-    : null;
   const companyName = cleanText(filingMetadata.companyName).slice(0, 300);
   const cik = String(filingMetadata.cik || '').trim();
   const formType = String(filingMetadata.formType || '').trim().toUpperCase();
@@ -158,12 +128,23 @@ export default async function handler(req, res) {
     return res.status(413).json({ error: 'Filing is too large to process safely.' });
   }
 
-  if (coreFacts) {
-    coreFacts = bindCoreFactsToFiling(coreFacts, {
+  let coreFacts = null;
+  let coreMetricChanges = { revenue: null, net_income: null, eps: null };
+  let trustedCurrency = null;
+  try {
+    const companyFacts = await fetchSecCompanyFacts(cik, process.env.SEC_USER_AGENT);
+    const derived = deriveSecFinancials(companyFacts.facts, {
       accessionNumber: filingIdentity,
+      formType,
       reportDate,
-      filingDate,
     });
+    coreFacts = derived.coreFacts;
+    coreMetricChanges = derived.coreMetricChanges;
+    trustedCurrency = derived.currency;
+  } catch (error) {
+    // Structured SEC facts improve factual verification, but their temporary
+    // unavailability must not turn into invented comparison data.
+    console.warn('SEC company facts unavailable for Titan verification:', error?.message || 'unknown error');
   }
 
   const trustedCoreMetrics = coreFacts ? {
@@ -171,13 +152,7 @@ export default async function handler(req, res) {
     net_income: coreFacts.net_income ? { value: coreFacts.net_income.value, unit: coreFacts.net_income.unit } : null,
     eps: coreFacts.eps ? { value: coreFacts.eps.value, unit: coreFacts.eps.unit } : null,
   } : null;
-  if (coreMetricChanges) {
-    for (const metric of ['revenue', 'net_income', 'eps']) {
-      if (!coreFacts?.[metric]) coreMetricChanges[metric] = null;
-    }
-  }
   const hasTrustedCoreMetrics = hasVerifiedCoreMetrics(trustedCoreMetrics);
-  const trustedCurrency = inferCoreFactsCurrency(coreFacts);
 
   const filingEvidence = buildFilingEvidence(filingText);
   if (filingEvidence.length < 500) return res.status(422).json({ error: 'Filing text is too short to analyze reliably.' });
