@@ -164,6 +164,11 @@ export default async function handler(req, res) {
     net_income: coreFacts.net_income ? { value: coreFacts.net_income.value, unit: coreFacts.net_income.unit } : null,
     eps: coreFacts.eps ? { value: coreFacts.eps.value, unit: coreFacts.eps.unit } : null,
   } : null;
+  if (coreMetricChanges) {
+    for (const metric of ['revenue', 'net_income', 'eps']) {
+      if (!coreFacts?.[metric]) coreMetricChanges[metric] = null;
+    }
+  }
   const hasTrustedCoreMetrics = hasVerifiedCoreMetrics(trustedCoreMetrics);
   const trustedCurrency = inferCoreFactsCurrency(coreFacts);
 
