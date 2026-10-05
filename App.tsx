@@ -106,7 +106,7 @@ const App: React.FC = () => {
         console.warn('SEC structured facts unavailable; continuing with filing text only.', factsError);
       }
 
-      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { companyName: filing.companyName, formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate }, coreFacts, coreMetricChanges });
+      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { companyName: filing.companyName, cik: filing.cik, formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate }, coreFacts, coreMetricChanges });
 
       const newSummary: EnhancedTitanSchema = {
         id: `${result.meta.ticker}-${new Date().getTime()}`,
