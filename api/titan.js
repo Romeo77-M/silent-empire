@@ -159,6 +159,7 @@ export default async function handler(req, res) {
     coreFacts = bindCoreFactsToFiling(coreFacts, {
       accessionNumber: filingIdentity,
       reportDate,
+      filingDate,
     });
   }
 
