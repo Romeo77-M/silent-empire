@@ -4,6 +4,8 @@ import { generateTitanSummary } from './services/titanService';
 import { fetchLatestFilingForTicker, fetchCompanyFacts } from './services/edgarService';
 import { extractCoreFactsForFiling } from './lib/secCoreFacts.js';
 import { normalizeSecCoreFacts } from './lib/secFactNormalization.js';
+import { extractPriorComparableCoreFacts } from './lib/secPriorCoreFacts.js';
+import { calculateCoreMetricChanges } from './lib/secMetricChanges.js';
 import * as cache from './services/cacheService';
 import * as historyService from './services/historyService';
 import { trackEvent } from './services/analyticsService';
@@ -87,18 +89,24 @@ const App: React.FC = () => {
       }
 
       let coreFacts;
+      let coreMetricChanges;
       try {
         const companyFacts = await fetchCompanyFacts(filing.cik);
-        coreFacts = normalizeSecCoreFacts(extractCoreFactsForFiling(companyFacts, {
+        const filingIdentity = {
           accessionNumber: filing.accessionNumber,
           formType: filing.formType,
           reportDate: filing.reportDate,
-        }));
+        };
+        const extractedCoreFacts = extractCoreFactsForFiling(companyFacts, filingIdentity);
+        const priorCoreFacts = extractPriorComparableCoreFacts(companyFacts, extractedCoreFacts, filingIdentity);
+        coreFacts = normalizeSecCoreFacts(extractedCoreFacts);
+        const normalizedPriorCoreFacts = normalizeSecCoreFacts(priorCoreFacts);
+        coreMetricChanges = calculateCoreMetricChanges(coreFacts, normalizedPriorCoreFacts);
       } catch (factsError) {
         console.warn('SEC structured facts unavailable; continuing with filing text only.', factsError);
       }
 
-      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { companyName: filing.companyName, formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate }, coreFacts });
+      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { companyName: filing.companyName, formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate }, coreFacts, coreMetricChanges });
 
       const newSummary: EnhancedTitanSchema = {
         id: `${result.meta.ticker}-${new Date().getTime()}`,
