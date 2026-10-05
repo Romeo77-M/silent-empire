@@ -24,6 +24,15 @@ interface TitanMultiPerspectiveResponse {
   };
 }
 
+interface CoreFact {
+  value: number;
+  unit: string;
+  concept: string;
+  accessionNumber: string;
+  reportDate: string;
+  filed: string;
+}
+
 interface FilingMetadata {
   companyName: string;
   formType: string;
@@ -31,11 +40,11 @@ interface FilingMetadata {
   reportDate: string;
 }
 
-export const generateTitanSummary = async ({ ticker, filingText, filingIdentity, filingMetadata }: { ticker: string; filingText: string; filingIdentity: string; filingMetadata: FilingMetadata; }): Promise<TitanMultiPerspectiveResponse> => {
+export const generateTitanSummary = async ({ ticker, filingText, filingIdentity, filingMetadata, coreFacts }: { ticker: string; filingText: string; filingIdentity: string; filingMetadata: FilingMetadata; coreFacts?: Record<string, CoreFact | null>; }): Promise<TitanMultiPerspectiveResponse> => {
   const { response, payload } = await fetchJson('/api/titan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ticker, filingText, filingIdentity, filingMetadata }),
+    body: JSON.stringify({ ticker, filingText, filingIdentity, filingMetadata, coreFacts }),
   }, 60000);
   if (!response.ok) {
     throw new Error(payload?.error || 'Titan API Error: Failed to generate financial summary.');
