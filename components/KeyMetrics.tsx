@@ -22,7 +22,8 @@ const currencySymbol = (currency: string): string => {
 
 const MetricCircle: React.FC<{ title: string; metric: Metric; currency: string }> = ({ title, metric, currency }) => {
   const unavailable = metric.unit === 'not_available';
-  const isPositive = metric.change_pct >= 0;
+  const hasVerifiedChange = metric.change_pct !== null;
+  const isPositive = hasVerifiedChange && metric.change_pct >= 0;
   const colorClass = isPositive ? 'text-positive-emerald' : 'text-risk-red';
   const bgColorClass = isPositive ? 'bg-positive-emerald/10' : 'bg-risk-red/10';
   const Icon = isPositive ? ArrowUpRightIcon : ArrowDownRightIcon;
@@ -52,10 +53,16 @@ const MetricCircle: React.FC<{ title: string; metric: Metric; currency: string }
         {value}
         <span className="text-lg text-gray-500 ml-1">{isPerShare ? '' : formatted.suffix}</span>
       </p>
-      <div className={`inline-flex items-center space-x-1 text-sm ${bgColorClass} ${colorClass} px-2 py-1 rounded`}>
-        <Icon className="w-4 h-4" />
-        <span>{metric.change_pct.toFixed(1)}%</span>
-      </div>
+      {hasVerifiedChange ? (
+        <div className={`inline-flex items-center space-x-1 text-sm ${bgColorClass} ${colorClass} px-2 py-1 rounded`}>
+          <Icon className="w-4 h-4" />
+          <span>{metric.change_pct.toFixed(1)}%</span>
+        </div>
+      ) : (
+        <div className="inline-flex items-center text-sm bg-white/5 text-gray-400 px-2 py-1 rounded">
+          <span>Comparison unavailable</span>
+        </div>
+      )}
     </div>
   );
 };
