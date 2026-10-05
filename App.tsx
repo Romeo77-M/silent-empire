@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { EnhancedTitanSchema } from './types';
 import { generateTitanSummary } from './services/titanService';
-import { fetchLatestFilingForTicker } from './services/edgarService';
+import { fetchLatestFilingForTicker, fetchCompanyFacts } from './services/edgarService';
+import { extractCoreFactsForFiling } from './lib/secCoreFacts.js';
 import * as cache from './services/cacheService';
 import * as historyService from './services/historyService';
 import { trackEvent } from './services/analyticsService';
@@ -84,7 +85,19 @@ const App: React.FC = () => {
           return;
       }
 
-      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { companyName: filing.companyName, formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate } });
+      let coreFacts;
+      try {
+        const companyFacts = await fetchCompanyFacts(filing.cik);
+        coreFacts = extractCoreFactsForFiling(companyFacts, {
+          accessionNumber: filing.accessionNumber,
+          formType: filing.formType,
+          reportDate: filing.reportDate,
+        });
+      } catch (factsError) {
+        console.warn('SEC structured facts unavailable; continuing with filing text only.', factsError);
+      }
+
+      const result = await generateTitanSummary({ ticker, filingText: filing.text, filingIdentity: filing.accessionNumber, filingMetadata: { companyName: filing.companyName, formType: filing.formType, filingDate: filing.filingDate, reportDate: filing.reportDate }, coreFacts });
 
       const newSummary: EnhancedTitanSchema = {
         id: `${result.meta.ticker}-${new Date().getTime()}`,
