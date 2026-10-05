@@ -2,6 +2,7 @@ import React from 'react';
 import type { TitanSchema, Metric } from '../types';
 import { ArrowUpRightIcon, ArrowDownRightIcon } from './icons/Icons';
 import { FinanceTooltip } from '../modules/finance-dictionary/FinanceTooltip';
+import { formatMetricValue } from '../lib/metricFormatting.js';
 
 interface KeyMetricsProps {
   metrics: TitanSchema['key_metrics'];
@@ -37,9 +38,10 @@ const MetricCircle: React.FC<{ title: string; metric: Metric; currency: string }
   }
 
   const isPerShare = title === 'EPS';
+  const formatted = formatMetricValue({ value: metric.value, unit: metric.unit, isPerShare });
   const value = isPerShare
-    ? `${currencySymbol(currency)}${metric.value.toFixed(2)}`
-    : metric.value.toLocaleString();
+    ? `${currencySymbol(currency)}${formatted.value}`
+    : formatted.value;
 
   return (
     <div className="metric-circle">
@@ -48,7 +50,7 @@ const MetricCircle: React.FC<{ title: string; metric: Metric; currency: string }
       </p>
       <p className="text-4xl font-serif text-white my-1 metric-value">
         {value}
-        <span className="text-lg text-gray-500 ml-1">{isPerShare ? '' : metric.unit}</span>
+        <span className="text-lg text-gray-500 ml-1">{isPerShare ? '' : formatted.suffix}</span>
       </p>
       <div className={`inline-flex items-center space-x-1 text-sm ${bgColorClass} ${colorClass} px-2 py-1 rounded`}>
         <Icon className="w-4 h-4" />
