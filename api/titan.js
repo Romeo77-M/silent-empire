@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { validateTitanResponse } from "../lib/titanValidation.js";
 import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
 import { verifyCoreMetrics, hasVerifiedCoreMetrics } from "../lib/titanFactualVerification.js";
+import { applyVerifiedMetricChanges } from "../lib/secMetricChanges.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -103,6 +104,7 @@ export default async function handler(req, res) {
   const filingIdentity = String(req.body?.filingIdentity || '').trim();
   const filingMetadata = req.body?.filingMetadata || {};
   const coreFacts = req.body?.coreFacts || null;
+  const coreMetricChanges = req.body?.coreMetricChanges || null;
   const companyName = cleanText(filingMetadata.companyName).slice(0, 300);
   const formType = String(filingMetadata.formType || '').trim().toUpperCase();
   const filingDate = String(filingMetadata.filingDate || '').trim();
@@ -211,6 +213,9 @@ ${filingEvidence}
       console.error('Titan core metrics disagreed with trusted SEC structured facts.');
       return res.status(502).json({ error: 'AI service returned financial metrics that did not match SEC structured facts.' });
     }
+
+    // Comparable-period percentage changes come from SEC structured facts, not the model.
+    applyVerifiedMetricChanges(parsed.perspectives, coreMetricChanges);
 
     // Causal language is high-risk in financial summaries. Require the selected filing
     // evidence itself to contain the same causal phrase before allowing it in output.
