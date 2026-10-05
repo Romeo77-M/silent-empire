@@ -4,6 +4,7 @@ import { hasUnsupportedCausalClaims } from "../lib/titanGrounding.js";
 import { verifyCoreMetrics, hasVerifiedCoreMetrics } from "../lib/titanFactualVerification.js";
 import { applyVerifiedMetricChanges } from "../lib/secMetricChanges.js";
 import { normalizeSecCoreFacts, inferCoreFactsCurrency, bindCoreFactsToFiling } from "../lib/secFactNormalization.js";
+import { normalizeCik } from "../lib/secCompanyFacts.js";
 
 const MAX_REQUEST_CHARS = 5_000_000;
 const MAX_ANALYSIS_CHARS = 120_000;
@@ -136,6 +137,7 @@ export default async function handler(req, res) {
     ? { ...suppliedCoreMetricChanges }
     : null;
   const companyName = cleanText(filingMetadata.companyName).slice(0, 300);
+  const cik = String(filingMetadata.cik || '').trim();
   const formType = String(filingMetadata.formType || '').trim().toUpperCase();
   const filingDate = String(filingMetadata.filingDate || '').trim();
   const reportDate = String(filingMetadata.reportDate || '').trim();
@@ -145,6 +147,7 @@ export default async function handler(req, res) {
     !filingText.trim() ||
     !/^\d{10}-\d{2}-\d{6}$/.test(filingIdentity) ||
     !companyName ||
+    !normalizeCik(cik) ||
     !['10-K', '10-Q'].includes(formType) ||
     !validDate(filingDate) ||
     (reportDate && !validDate(reportDate))
